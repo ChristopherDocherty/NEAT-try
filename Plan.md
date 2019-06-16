@@ -53,8 +53,20 @@ Make data structures required
 
 Neat Algorithm
 
--Divide into species\
-    -
+  -Create
+
+  -Create initial genes
+
+  -Create initial genomes
+
+
+
+
+
+  -Divide into species\
+    -Calculate delta
+    -Add to species when delta< deltaT
+    -New species otherwise
 
   -Evaluate fitness\
     -Build Net\
