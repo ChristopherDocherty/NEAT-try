@@ -29,7 +29,7 @@ Constants required
     -c2 (disjoint) = 1\
     -c3 (Weights) = 0.4\
     -deltaT = 3\
-    -Max stale = 15\
+    -Max stale = 15
 
 
 
@@ -43,51 +43,51 @@ Make data structures required
   genes\
   genomes\
   species\
-  generation\
+  generation
 
 
 
 
 Part 3:
 
-Neat Algorithm\
+Neat Algorithm
 
 -Divide into species\
-    -\
+    -
 
   -Evaluate fitness\
     -Build Net\
     -Run simulation\
-    -Use fitness function\
+    -Use fitness function
 
-  -Rank genomes in species\
+  -Rank genomes in species
 
-  -Calculate adjusted fitness (f') and sum for species\
+  -Calculate adjusted fitness (f') and sum for species
 
-  -Assign offspring in proportion to sum of f' in species\
+  -Assign offspring in proportion to sum of f' in species
 
-  -Kill assigned number of weakest individuals\
+  -Kill assigned number of weakest individuals
 
-  -Recombine to replace these individuals\
+  -Recombine to replace these individuals
 
-  -Mutate offspring\
+  -Mutate offspring
 
   -Mutate 25% of rest of population\
     -Will be in species structures already\
     -Enforce elitism on any best species member for species with 5 or more members
 
-  -Increment generation\
+  -Increment generation
 
-  -Repeat\
-
-
-
-Part 4\
-
-Simulation design\
+  -Repeat
 
 
 
-Part 5\
+Part 4
 
-Fitness function design\
+Simulation design
+
+
+
+Part 5
+
+Fitness function design
