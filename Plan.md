@@ -53,20 +53,21 @@ Make data structures required
 
 Neat Algorithm
 
-  -Create
+  -Create initial generation
 
-  -Create initial genes
 
-  -Create initial genomes
 
+  -Create initial genomes\
+    -BlankGenome
+    -AddLink
 
 
 
 
   -Divide into species\
-    -Calculate delta
-    -Add to species when delta< deltaT
-    -New species otherwise
+    -Calculate delta\
+    -Add to species when delta< deltaT\
+    -New species otherwise\
 
   -Evaluate fitness\
     -Build Net\
@@ -80,16 +81,22 @@ Neat Algorithm
   -Assign offspring in proportion to sum of f' in species
 
   -Kill assigned number of weakest individuals
+    -Kill function with proportion as parameter
 
   -Recombine to replace these individuals
+    -Recombine function
+    -AddToSpecies function
 
-  -Mutate offspring
+  -Mutate offspring\
+    -AddNode function\
+    -AddLink function\
+    -AlterWeights function
 
   -Mutate 25% of rest of population\
     -Will be in species structures already\
     -Enforce elitism on any best species member for species with 5 or more members
 
-  -Increment generation
+  -Next generation function
 
   -Repeat
 
