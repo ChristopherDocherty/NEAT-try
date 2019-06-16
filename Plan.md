@@ -1,7 +1,7 @@
-### Plan
-# Have to split project up into sections I can do in a wunner
+# Plan
+#### Have to split project up into sections I can do in a wunner
 
-# Part 1:
+### Part 1:
 
 Constants required
 
@@ -36,7 +36,7 @@ Constants required
 
 
 
-# Part 2:
+### Part 2:
 
 Make data structures required
 
@@ -49,7 +49,7 @@ Make data structures required
 
 
 
-# Part 3:
+### Part 3:
 
 Neat Algorithm
 
@@ -83,12 +83,12 @@ Neat Algorithm
 
 
 
-# Part 4
+### Part 4
 
 Simulation design
 
 
 
-# Part 5
+### Part 5
 
 Fitness function design
