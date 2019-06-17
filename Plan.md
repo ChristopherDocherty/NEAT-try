@@ -74,11 +74,6 @@ Neat Algorithm
 
 In while loop till
 
-  -Divide into species\
-    -Calculate delta\
-    -Add to species when delta< deltaT\
-      -Will be order in some way meaningful or not
-    -New species otherwise\
 
   -Evaluate fitness\
     -Build Net\
@@ -121,6 +116,11 @@ Going to interpret the replacement scheme as get rid of all but best if more tha
       -Kill function
     -Replace with temporary child and elite tables
 
+  -Divide into species\
+    -Calculate delta\
+    -Add to species when delta< deltaT\
+    -Will be order in some way meaningful or not
+    -New species otherwise\
 
   -Increment generation
 
@@ -132,10 +132,10 @@ In code have:
 
   Initialisation
   While... do
-    Speciate
     Fitness Evaluation
     Ranking
     Population Creation
+    Speciate
   end
 
 Each a separate function
