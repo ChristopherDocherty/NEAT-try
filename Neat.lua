@@ -5,6 +5,8 @@ necessary data ot actually runthe algorithm
 --Constants
 population =150
 genNum = 1
+nodeNum = 0
+innovation = 0
 
 --Mutation Constants
 mChance = 0.25
@@ -30,10 +32,35 @@ staleLim = 15
 inputs = 0
 outputs = 0
 
+
+
 --Data structures
 
-function makeNode()
+inno = {}
+inno.data = {}
+inno.noNodes = 0
+--can define nodes implicitly in innovation structure
+--Store the connection I/O that the node disrupts in here
 
+
+function makeNode(genome,gene)
+--Check if node already exists by looking at I/O
+
+--[[on creation, nodes ahve a unique I/O identifier, so if that is stored on
+creation (i.e. in this function) then identical nodes can identified]]
+  --Use for loop to search inno structure
+
+
+--All connectoin genes aer uniquely identified by I/O as innovation depends on it entirely
+  if someVar = false then
+
+    inno.noNodes = inno,noNodes + 1
+    local nodeID = inno.noNodes
+    table.insert(inno.data,{gene.I,gene.O}) --IMPORTANT for format of data in table
+
+  end
+
+  return nodeID
 end
 
 
@@ -44,8 +71,11 @@ function makeGene()
   gene.I = 0
   gene.O = 0
   gene.weight = 0
-  gene.enable = 1
-  gene.innovation = 1 --Might need change
+  gene.enable = true
+  --[[gene.innovation = 1
+can add this back in if I want to keep track from some reaosn
+but there is no need given innovation number is implicitly defined
+]]
 
   return gene
 
@@ -60,6 +90,7 @@ function makeGenome()
   genome.speciesRank = 0
   genome.globalRank = 0
   genome.fitness = 0
+  genome.nodeNum = 0
 
   return genome
 
@@ -101,15 +132,53 @@ function addToSpecies(genome)
 
 end
 
+--Meta mutate functions
 
---Mutate functions
+function randomNodes(genome,type)
+  --Always want 2 nodes out
+  --This function needs to get a unique (for the genome) pair of nodes
 
-function addLink()
+
 
 end
 
 
-function addNode()
+
+
+--Mutate functions
+
+function addLink(genome) --Need to determine if already existing
+
+  local linkGene = makeGene()
+  --enabled by default
+
+  linkGene.I, linkGene.O = randomNodes(genome)
+  linkgene.weight = math.random()*4 -2 --following sethbling [-2,2] range here
+
+  table.insert(genome.genes,linkGene)--check if this will stay global
+end
+
+
+function addNode(genome)
+
+  local addGene1 = makeGene()
+  local addGene2 = makeGene()
+
+  selected = random(1,#genome.genes)
+  disruptGene = genome.gene(selected)
+
+  newNode = makeNode(genome, disruptGene)
+
+  addGene1.I = disruptGene.I
+  addGene1.O = newNode
+  addGene1.weight = 1
+
+
+  addGene2.I = newNode
+  addGene2.O = disruptGene.O
+  addGene2.weight = disruptGene.weight
+
+  genome.gene(selected).enable = false
 
 end
 
@@ -182,7 +251,8 @@ function speciesRank(species)
 end
 
 
---
+--Miscellaneous
+
 
 
 

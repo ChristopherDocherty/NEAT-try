@@ -1,14 +1,20 @@
 ####17/06/2019
 
-Finish genRank()\
-Finish speciesRank()\
+Finish genRank() DONE!
+Finish speciesRank() DONE!
 Finish mutation()\
-Finish adjustF()
+  -addLink() DONE!
+  -addNode() DONE!
+
 
 ####18/06/2019
 
-Finish offspringAssign()\
-Finish createPop()\
+Finish mutation
+  -alterWeight()
+  -mutate()
+Finish adjustF()
+Finish offspringAssign()
+Finish createPop()
 Finish speciate()
 
 ####19/06/2019
