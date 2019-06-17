@@ -9,6 +9,8 @@ Finish mutation()\
 
 ####18/06/2019
 
+Finish makeNode()
+Finish randomNodes()  
 Finish mutation
   -alterWeight()
   -mutate()
