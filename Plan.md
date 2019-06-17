@@ -149,6 +149,7 @@ Neural net design
 ### Part 5
 
 Simulation design
+-Copy SethBling
 
 
 ### Part 6

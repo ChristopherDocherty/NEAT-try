@@ -123,6 +123,20 @@ function mutate()
 
 end
 
+--Currently miscellaneous
+
+function genRank()
+
+  local fullList = {}
+
+  for 1,#gen.species do
+
+    fullList =
+
+
+
+
+
 --Initialisation
 
 gen = makeGen()
@@ -149,7 +163,7 @@ while true do
   genRank()
   speciesRank()
 
-  fps()
+  adjustF()
   offspringAssign()
   createPop()
 
