@@ -123,16 +123,66 @@ function mutate()
 
 end
 
---Currently miscellaneous
+--Ranking functions
 
 function genRank()
 
-  local fullList = {}
+  local forSort = {}
 
-  for 1,#gen.species do
+  for i = 1,#gen.species do
 
-    fullList =
+    local tempSpecies = gen.species[i]
 
+    for j = 1,#species.genomes do
+
+      table.insert(forSort,species.genomes[j])
+
+    end
+  end
+
+table.sort(forSort, function (a,b)
+  return(a.fitness > b.fitness)
+
+  end
+  )
+
+  for i = 1,#global do
+
+    forSort.globalRank[i] = i
+
+  end
+
+end
+
+
+function speciesRank(species)
+
+  local forSort = {}
+
+  for i = 1, #species.genomes do
+
+    table.insert(forSort,species.genome[i])
+
+  end
+
+  table.sort(forSort, function(a,b)
+    return(a.fitness > b.fitness)
+
+  end
+  )
+
+  for i = 1,#global do
+
+    forSort.speciesRank[i] = i
+
+  end
+
+
+
+end
+
+
+--
 
 
 
