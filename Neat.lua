@@ -4,6 +4,7 @@ necessary data ot actually runthe algorithm
 
 --Constants
 population =150
+genNum = 1
 
 --Mutation Constants
 mChance = 0.25
@@ -25,8 +26,16 @@ c3 = 0.4
 deltaT = 3
 staleLim = 15
 
+--Terminals of neural net
+inputs = 0
+outputs = 0
 
 --Data structures
+
+function makeNode()
+
+end
+
 
 function makeGene()
 
@@ -76,13 +85,76 @@ function makeGen()
 
   local gen = {}
 
-  gen.number = 0
+  gen.number = genNum
   gen.species = {}
   gen.maxFitness = 0
+
+  genNum = genNum + 1
 
   return gen
 
 end
 
+--Add to functions
 
---
+function addToSpecies(genome)
+
+end
+
+
+--Mutate functions
+
+function addLink()
+
+end
+
+
+function addNode()
+
+end
+
+
+function alterWeight()
+
+end
+
+
+function mutate()
+
+end
+
+--Initialisation
+
+gen = makeGen()
+
+--[[
+Find number of inputs and outpus and put here
+
+]]
+
+--Speciate on the fly
+for i = 1,population do
+
+  local genome = makeGenome
+
+  genome = addlink(genome)
+  addToSpecies(genome)
+
+end
+
+
+while true do
+
+  fitnessEval()
+  genRank()
+  speciesRank()
+
+  fps()
+  offspringAssign()
+  createPop()
+
+  speciate()
+
+  genNum = genNum +1
+
+end
