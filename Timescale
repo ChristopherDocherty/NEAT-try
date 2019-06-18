@@ -9,8 +9,8 @@ Finish mutation()\
 
 ####18/06/2019
 
-Finish makeNode()
-Finish randomNodes()  
+Finish makeNode() DONE!
+Finish randomNodes() DONE!
 Finish mutation
   -alterWeight()
   -mutate()
@@ -21,7 +21,8 @@ Finish speciate()
 
 ####19/06/2019
 
-Work out particulars of neural net\
+Work out particulars of neural net
+  -Not currently enforcing feed forward
 Create fitness function using same inputs as SethBling
 
 ####20/06/2019

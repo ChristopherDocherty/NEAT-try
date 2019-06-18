@@ -7,6 +7,7 @@ population =150
 genNum = 1
 nodeNum = 0
 innovation = 0
+stepSize = 0.01 --From NEAT paper
 
 --Mutation Constants
 mChance = 0.25
@@ -38,7 +39,7 @@ outputs = 0
 
 inno = {}
 inno.data = {}
-inno.noNodes = 0
+--Unless i can think of some otehr information I have to store thendelete this later
 --can define nodes implicitly in innovation structure
 --Store the connection I/O that the node disrupts in here
 
@@ -46,22 +47,37 @@ inno.noNodes = 0
 function makeNode(genome,gene)
 --Check if node already exists by looking at I/O
 
---[[on creation, nodes ahve a unique I/O identifier, so if that is stored on
-creation (i.e. in this function) then identical nodes can identified]]
-  --Use for loop to search inno structure
+  local found = false
+  local nodeID = 0
+
+  local i = 1
+
+  while found = false & i <= #inno.data do
 
 
---All connectoin genes aer uniquely identified by I/O as innovation depends on it entirely
-  if someVar = false then
+    if {gene.I,gene.O} = inno.data[i]
+      found = true
+      nodeID = i
+    end
 
-    inno.noNodes = inno,noNodes + 1
-    local nodeID = inno.noNodes
-    table.insert(inno.data,{gene.I,gene.O}) --IMPORTANT for format of data in table
+    i = i + 1
+  end
 
+  if found = false then
+    table.insert(inno.data,{gene.I,gene.O})--IMPORTANT for format of data in table
+    nodeID = #inno.data
   end
 
   return nodeID
+
+--[[on creation, nodes have a unique I/O identifier, so if that is stored on
+creation (i.e. in this function) then identical nodes can identified]]
+  --Use for loop to search inno structure
+  --All connectoin genes aer uniquely identified by I/O as innovation depends on it entirely
 end
+
+
+
 
 
 function makeGene()
@@ -134,11 +150,68 @@ end
 
 --Meta mutate functions
 
-function randomNodes(genome,type)
+--Not going to enforce feed forward network in this case
+--BUt can if that turns out to be easier during the NN stage
+function distanceFromI()
+
+
+
+end
+
+function removeOutputs (inno)
+
+  for i = 1,outputs do
+
+    table.remove(inno,i)
+  end
+
+
+end
+
+
+
+
+function randomNodes(genome)
   --Always want 2 nodes out
   --This function needs to get a unique (for the genome) pair of nodes
+  --If wanting a feed forward network the need distanceFromI funciton
 
 
+  local geneList = genome.genes
+  local innoCopy = inno.data
+  --Get rid of outputs for RNG
+  for i = 1,outputs do
+    table.remove(inno,i)
+  end
+
+  --Finding if unique and regenerateing if not
+  local unique = false
+  while unique = false do
+
+    local found = false
+
+    --giving random values
+    I = innoCopy[random(1,#inno_copy)]
+    O = inno.data[random(inputs+1,#inno.data)]
+
+    --Search for gene
+    local i = 1
+    while found = false & i < #genome.genes do
+
+      if I = geneList.I & O = geneList.O then --Pretty sure this works
+        found = true
+      end
+
+      i = i + 1
+
+    end
+
+    if found = false then
+      unique = true
+    end
+  end
+
+  return {I,O}
 
 end
 
@@ -184,6 +257,8 @@ end
 
 
 function alterWeight()
+
+
 
 end
 
