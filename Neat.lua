@@ -168,7 +168,15 @@ function removeOutputs (inno)
 
 end
 
+function cauchyStep()
 
+  local rng = (math.random() - 0.5) / 5
+
+  perturb = 1 / (math.pi * stepSize * (1 + (rng / stepSize)^2)
+
+  return perturb
+
+end
 
 
 function randomNodes(genome)
@@ -191,8 +199,8 @@ function randomNodes(genome)
     local found = false
 
     --giving random values
-    I = innoCopy[random(1,#inno_copy)]
-    O = inno.data[random(inputs+1,#inno.data)]
+    I = innoCopy[math.random(1,#inno_copy)]
+    O = inno.data[math.random(inputs+1,#inno.data)]
 
     --Search for gene
     local i = 1
@@ -237,7 +245,7 @@ function addNode(genome)
   local addGene1 = makeGene()
   local addGene2 = makeGene()
 
-  selected = random(1,#genome.genes)
+  selected = math.random(1,#genome.genes)
   disruptGene = genome.gene(selected)
 
   newNode = makeNode(genome, disruptGene)
@@ -251,19 +259,55 @@ function addNode(genome)
   addGene2.O = disruptGene.O
   addGene2.weight = disruptGene.weight
 
+  table.insert(genome.genes,addGene1)
+  table.insert(genome.genes,addGene2)
   genome.gene(selected).enable = false
 
 end
 
 
-function alterWeight()
 
 
+
+
+function alterWeight(genome)
+
+  local gene = genome.genes
+
+
+  if rand <= mPerturb then
+
+    for i = 1,#genome.genes do
+
+      gene[i].weight =gene.[i].weight + cauchyStep()
+
+    end
+
+  else
+
+    gene[i].weight =  math.random()*4 -2
 
 end
 
+--[[Implementation choice of whether multiple different types of mutatoin can
+or not. Here I have chosen only one kind of mutation because I don't know which
+is correct]]
+function mutate(genome)
 
-function mutate()
+ local rng = math.random()
+
+ if rng < mWeight then
+
+   alterWeight(genome)
+
+ elseif rng < mWeight + mAddNode then
+
+   addNode(genome)
+
+ elseif  rng < mWeight + mAddNode + mAddLink then
+
+   addLink(genome)
+ end
 
 end
 
@@ -344,7 +388,7 @@ Find number of inputs and outpus and put here
 --Speciate on the fly
 for i = 1,population do
 
-  local genome = makeGenome
+  local genome = makeGenome()
 
   genome = addlink(genome)
   addToSpecies(genome)

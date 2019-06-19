@@ -11,9 +11,9 @@ Finish mutation()\
 
 Finish makeNode() DONE!
 Finish randomNodes() DONE!
-Finish mutation
-  -alterWeight()
-  -mutate()
+Finish mutation DONE!
+  -alterWeight() DONE!
+  -mutate() DONE!  
 Finish adjustF()
 Finish offspringAssign()
 Finish createPop()
