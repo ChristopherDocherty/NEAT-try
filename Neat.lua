@@ -44,6 +44,7 @@ inno.data = {}
 --Store the connection I/O that the node disrupts in here
 
 
+
 function makeNode(genome,gene)
 --Check if node already exists by looking at I/O
 
@@ -108,6 +109,7 @@ function makeGenome()
   genome.fitness = 0
   genome.nodeNum = 0
 
+
   return genome
 
 end
@@ -118,10 +120,12 @@ function makeSpecies()
   local species
 
   species.genomes = {}
-  species.sumADJFit = 0
+  species.meanF = 0
+  species.propTOkill = 0
   species.numTOkill = 0
   species.staleness = 0
   species.example = {}
+  species.elite = {}
 
   return species
 
@@ -135,6 +139,8 @@ function makeGen()
   gen.number = genNum
   gen.species = {}
   gen.maxFitness = 0
+  gen.totalF = 0
+  gen.eliteNum = 0
 
   genNum = genNum + 1
 
@@ -313,9 +319,11 @@ end
 
 --Ranking functions
 
+--Also calculates total fitness
 function genRank()
 
   local forSort = {}
+  local totalF = gen.totalF
 
   for i = 1,#gen.species do
 
@@ -324,7 +332,6 @@ function genRank()
     for j = 1,#species.genomes do
 
       table.insert(forSort,species.genomes[j])
-
     end
   end
 
@@ -334,23 +341,27 @@ table.sort(forSort, function (a,b)
   end
   )
 
-  for i = 1,#global do
+  for i = 1,#forSort do
 
     forSort.globalRank[i] = i
-
+    --Still pretty sure this works
+    totalF = totalF + forSort.fitness
   end
 
 end
 
-
+--Make species rank also sum so it is quicker
+--May need to change this function based on whether i parameter pass or not
 function speciesRank(species)
 
   local forSort = {}
+  local sum = 0
+
 
   for i = 1, #species.genomes do
 
     table.insert(forSort,species.genome[i])
-
+    sum = sum + species.genome[i].fitness
   end
 
   table.sort(forSort, function(a,b)
@@ -359,9 +370,84 @@ function speciesRank(species)
   end
   )
 
-  for i = 1,#global do
+  --For elitism purposes
+  if #forSort >= 5 then
+
+    table.insert(species.elite, forSort[1])
+
+  end
+
+  for i = 1,#forSort do
 
     forSort.speciesRank[i] = i
+
+  end
+
+  --For adjusted fitness
+  species.meanF = sum / #species.genomes
+
+
+end
+
+
+--For making new generation
+
+function offspringAssign()
+
+  local species = gen.species
+  local forPropor = 0
+--not keeping track of generation explcitly just store seperately in file part
+    for i = 1,#species do
+
+      forPropor = forPropor + species[i].meanF
+
+    end
+
+    for i = 1,#species do
+
+      species[i].propTOkill = meanf / forPropor
+
+    end
+
+
+end
+
+--Want to check this after
+--Should just globally assign to species - my intention anyway
+function SUS()
+
+  local i = 1
+  local a = 0
+  local r = math.random() * (1 / population)
+  local wantChildNum = population - gen.eliteNum
+  --TO make sure required number of children is found
+  local overallChildNum = 0
+  local speciesChildNum = 0
+
+
+--need to adjust for elitism DONE
+  while  overallChildNum <= wantChildNum do
+
+    --Accumulative probablity
+    a = a + gen.species[i].propTOkill
+
+    --Resetting to take from top each time
+    speciesChildNum = 0
+    while r <= a do
+
+      r = r +(1 / childNum)
+      speciesChildNum = speciesChildNum +1
+
+
+      --Count of parents overall
+      overallChildNum = overallChildNum + 1
+    end
+
+    --Saving number of children for each species
+    gen.species[i].numTOkill = speciesChildNum
+
+    i = i + 1
+
 
   end
 
@@ -369,8 +455,53 @@ function speciesRank(species)
 
 end
 
+function createPop()
 
---Miscellaneous
+  local children = {}
+  local parents = {}
+
+
+  for i = 1,#gen.species do
+    --Elitism
+    if species[i].elite ~= nil then
+      table.insert(children,gen.species[i].elite)
+      table.remove(gen.species[i].elite)
+      gen.eliteNum = gen.eliteNum +1
+    end
+
+  end
+
+
+  --Making babies
+
+  --Needed number of elite for this function
+   SUS()
+
+   killWeaklings()
+   --meaning sort and remove bottom so many
+
+   childtemp = Breed()
+
+   --use table.move() to combine children and childtemp
+
+   stale()
+   --save one genome in examples but remove all the rest
+   blankSpecies()
+
+
+
+   speciate()
+
+
+end
+
+
+
+
+
+
+
+
 
 
 
@@ -400,13 +531,16 @@ while true do
 
   fitnessEval()
   genRank()
-  speciesRank()
 
-  adjustF()
+--Probably inefficient method
+  for i =1,#gen.species do
+    --Species ranking and summation of
+    speciesRank(gen.species[i])
+  end
+
+
   offspringAssign()
-  createPop()
-
-  speciate()
+  createPopandSpeciate()
 
   genNum = genNum +1
 

@@ -14,30 +14,37 @@ Finish randomNodes() DONE!
 Finish mutation DONE!
   -alterWeight() DONE!
   -mutate() DONE!  
-Finish adjustF()
-Finish offspringAssign()
+Finish adjustF() DONE! (although changed from before)
+Finish offspringAssign() DONE!
 Finish createPop()
-Finish speciate()
+  -Potentially need to alter the functions for ranking depending on design choice DONE!
+  -For implementing SUS, going to just use it for finding the number of children allocated to each species DONE!
+  -recombination()
+  -blankSpecies()
+  -speciate()
+  -addToSpecies()
 
-#### 19/06/2019
+#### 20/06/2019
 
+Something to combat staleness
 Work out particulars of neural net
   -Not currently enforcing feed forward
 Create fitness function using same inputs as SethBling
 
-#### 20/06/2019
+#### 21/06/2019
 
 Get file storage down\
+  -not keeping track of generation explicitly just store separately in file part\
 debug\
 Leave to run simulation overnight
 
-#### 21/06/2019
+#### 22/06/2019
 
 Check results\
 Figure out a way to replay them\
 Record results for some YouTube video
 
-#### 22/06/2019-23/06/2019
+#### 23/06/2019
 
 Learn simple video editing software\
 Make new channel\
