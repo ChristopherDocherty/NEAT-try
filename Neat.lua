@@ -661,14 +661,34 @@ function createPop()
 end
 
 
+function Speciate(children)
+
+  for i = 1,#children do
+
+    local child = children[i]
+    local found = false
+    local count = 1
+    while count <= #gen.species & found == false do
+
+      found = sameSpecies(child,gen.species[count])
+
+    end
+
+    if found = true then
+      addToSpecies(child,count)
+    else
+      local newSpecies = makeSpecies()
+      table.insert(newSpecies,child)
+      table.imsert
+    end
+
+
+  end
 
 
 
 
-
-
-
-
+end
 
 
 
@@ -716,7 +736,8 @@ while true do
     table.insert(gen.species,nextGenSpecies[i])
   end
 
-  speciate(children)  
+
+  speciate(children)
   --HAVE TO REMOVE EXAMPLE AFTER SPECIATION
 
 

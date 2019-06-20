@@ -28,7 +28,7 @@ Combine child tables after breed
 -stale() DONE!
 -blankSpecies() no longer required!
 -speciate()
-Something to combat staleness
+Something to combat staleness DONE!
 Work out particulars of neural net
   -Not currently enforcing feed forward
 Create fitness function using same inputs as SethBling
