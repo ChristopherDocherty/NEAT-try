@@ -8,6 +8,7 @@ genNum = 1
 nodeNum = 0
 innovation = 0
 stepSize = 0.01 --From NEAT paper
+propForDeath = 0.5
 
 --Mutation Constants
 mChance = 0.25
@@ -39,6 +40,8 @@ outputs = 0
 
 inno = {}
 inno.data = {}
+inno.count = 0
+
 --Unless i can think of some otehr information I have to store thendelete this later
 --can define nodes implicitly in innovation structure
 --Store the connection I/O that the node disrupts in here
@@ -56,7 +59,7 @@ function makeNode(genome,gene)
   while found = false & i <= #inno.data do
 
 
-    if {gene.I,gene.O} = inno.data[i]
+    if gene.I == inno.data[i].input & gene.O = inno.data[i].output then
       found = true
       nodeID = i
     end
@@ -64,8 +67,11 @@ function makeNode(genome,gene)
     i = i + 1
   end
 
-  if found = false then
-    table.insert(inno.data,{gene.I,gene.O})--IMPORTANT for format of data in table
+  if found == false then
+    local temp = {}
+    temp.input = gene.I
+    temp.output = gene.O
+    table.insert(inno.data,temp)--IMPORTANT for format of data in table
     nodeID = #inno.data
   end
 
@@ -89,6 +95,7 @@ function makeGene()
   gene.O = 0
   gene.weight = 0
   gene.enable = true
+  gene.innovation = 0
   --[[gene.innovation = 1
 can add this back in if I want to keep track from some reaosn
 but there is no need given innovation number is implicitly defined
@@ -121,6 +128,7 @@ function makeSpecies()
 
   species.genomes = {}
   species.meanF = 0
+  species.maxF = 0
   species.propTOkill = 0
   species.numTOkill = 0
   species.staleness = 0
@@ -134,6 +142,7 @@ end
 
 function makeGen()
 
+  genNum = genNum + 1
   local gen = {}
 
   gen.number = genNum
@@ -142,7 +151,6 @@ function makeGen()
   gen.totalF = 0
   gen.eliteNum = 0
 
-  genNum = genNum + 1
 
   return gen
 
@@ -212,7 +220,7 @@ function randomNodes(genome)
     local i = 1
     while found = false & i < #genome.genes do
 
-      if I = geneList.I & O = geneList.O then --Pretty sure this works
+      if I == geneList.I & O = geneList.O then --Pretty sure this works
         found = true
       end
 
@@ -220,7 +228,7 @@ function randomNodes(genome)
 
     end
 
-    if found = false then
+    if found == false then
       unique = true
     end
   end
@@ -228,6 +236,33 @@ function randomNodes(genome)
   return {I,O}
 
 end
+
+--For getting the innovation of genes
+function getInno(I,O)
+
+
+  local found = false
+
+  local i = 1
+
+  while found = false & i <= #inno.data do
+
+    if gene.I == inno.data[i].input & gene.O = inno.data[i].output then
+      found = true
+    end
+
+    i = i + 1
+  end
+
+  if found == false then
+    inno.count = inno.count + 1
+    return inno.count
+  else
+    return i
+  end
+
+end
+
 
 
 
@@ -240,7 +275,8 @@ function addLink(genome) --Need to determine if already existing
   --enabled by default
 
   linkGene.I, linkGene.O = randomNodes(genome)
-  linkgene.weight = math.random()*4 -2 --following sethbling [-2,2] range here
+  linkGene.weight = math.random()*4 -2 --following sethbling [-2,2] range here
+  linkGene.innovation = getInno(linkGene.I,linkGene.O)
 
   table.insert(genome.genes,linkGene)--check if this will stay global
 end
@@ -259,11 +295,13 @@ function addNode(genome)
   addGene1.I = disruptGene.I
   addGene1.O = newNode
   addGene1.weight = 1
+  addGene1.innovation = getInno(addGene1.I ,addGene1.O)
 
 
   addGene2.I = newNode
   addGene2.O = disruptGene.O
   addGene2.weight = disruptGene.weight
+  addGene2.innovation = getInno(addGene2.I,addGene2.O)
 
   table.insert(genome.genes,addGene1)
   table.insert(genome.genes,addGene2)
@@ -315,6 +353,7 @@ function mutate(genome)
    addLink(genome)
  end
 
+
 end
 
 --Ranking functions
@@ -360,8 +399,8 @@ function speciesRank(species)
 
   for i = 1, #species.genomes do
 
-    table.insert(forSort,species.genome[i])
-    sum = sum + species.genome[i].fitness
+    table.insert(forSort,species.genomes[i])
+    sum = sum + species.genomes[i].fitness
   end
 
   table.sort(forSort, function(a,b)
@@ -379,13 +418,19 @@ function speciesRank(species)
 
   for i = 1,#forSort do
 
+--Definetly passes its value?
     forSort.speciesRank[i] = i
 
   end
 
   --For adjusted fitness
   species.meanF = sum / #species.genomes
-
+  --for max f
+  if forSort[1].fitness > species.maxF then
+    species.maxF = forSort[1].fitness
+  else
+    species.staleness = species.staleness + 1
+  end
 
 end
 
@@ -394,18 +439,17 @@ end
 
 function offspringAssign()
 
-  local species = gen.species
   local forPropor = 0
 --not keeping track of generation explcitly just store seperately in file part
-    for i = 1,#species do
+    for i = 1,#gen.species do
 
-      forPropor = forPropor + species[i].meanF
+      forPropor = forPropor + gen.species[i].meanF
 
     end
 
     for i = 1,#species do
 
-      species[i].propTOkill = meanf / forPropor
+      gen.species[i].propTOkill = meanf / forPropor
 
     end
 
@@ -451,14 +495,128 @@ function SUS()
 
   end
 
+end
 
+function killWeaklings()
+
+
+  --iterate over every species
+  for i = 1,#gen.species do
+
+    table.sort(gen.species[i].genomes, function(a,b)
+      return(a.speciesRank < b.speciesRank)
+    end
+    )
+    tempGenomeCount = #gen.species[i].genomes
+
+    --Removes worst so many
+    for j = 1, tempGenomeCount* propForDeath do
+      table.remove(gen.species.[i].genomes)
+    end
+
+  end
+
+end
+
+--Going to leave out case where g1 fitness is same as g2
+function recommbine(g1,g2)
+
+  local equal = false
+  local child = makeGenome()
+
+  if math.random() <= 0.75 then
+
+--Ensuring fittest is always g1
+    if g1.fitness < g2.fitness then
+      local tempg = g2
+      g2 = g1
+      g1 = tempg
+    elseif g1.fitness == g2.fitness then
+      equal = true
+    end
+
+--copy innovatoins so they can be accessed by their index number
+    local innovations2 = {}
+	   for i=1,#g2.genes do
+		     local gene = g2.genes[i]
+		     innovations2[gene.innovation] = gene
+	   end
+
+
+--actually giving genes
+    for i = 1,#g1.genes do
+      local gene1 = g1.genes[i]
+      local gene2 = innovations2[gene1.innovation]
+
+      if gene2 ~= nil and math.random(2) == 1 then
+        table.insert(child.genes,gene2)
+      else
+        table.insert(child.genes,gene1)
+      end
+
+      return child
+
+    end
+
+  else
+    --If not from recombination just copy fitter individual
+    child.genes = g1.genes
+    child.nodeNum = g1.nodeNum
+
+    return child
+  end
+end
+
+
+
+
+
+
+--Need to return children from recombination
+function breed()
+
+  local species = gen.species
+  local bred = {}
+
+  for i = 1,#species do
+
+    for i = 1,species[i].numTOkill do
+
+      local genomeCnt = #species[i].genomes
+
+      g1 = species[i].genomes[math.random(genomeCnt)]
+      g2 = species[i].genomes[math.random(genomeCnt)]
+
+      local child = recombine(g1,g2)
+
+      child = mutate(child)
+
+      table.insert(bred,child)
+
+    end
+
+  end
+
+
+  return bred
+
+end
+
+
+function stale()
+
+  for i =1,#gen.species do
+
+    if s
+
+  end
 
 end
 
 function createPop()
 
   local children = {}
-  local parents = {}
+
 
 
   for i = 1,#gen.species do
@@ -480,18 +638,25 @@ function createPop()
    killWeaklings()
    --meaning sort and remove bottom so many
 
-   childtemp = Breed()
+   childtemp = breed()
 
    --use table.move() to combine children and childtemp
+   children = table.move() --etc....
 
-   stale()
+   local nextGenSpecies = {}
+
+
+   for i = 1,#gen.species do
+    if gen.species[i].staleness < staleLim then
+
+      gen.species[i].example = gen.species[i].genomes[math.random(1,#gen.species[i].genomes)]
+      table.insert(nextGenSpecies,gen.species[i])
+
+    end
    --save one genome in examples but remove all the rest
-   blankSpecies()
 
 
-
-   speciate()
-
+   return children, nextGenSpecies
 
 end
 
@@ -540,8 +705,20 @@ while true do
 
 
   offspringAssign()
-  createPopandSpeciate()
 
-  genNum = genNum +1
+  local children = {}
+  local nextGenSpecies ={}
+  children, nextGenSpecies = createPop()
+
+
+  gen = makeGen()
+  for i = 1,#nextGenSpecies do
+    table.insert(gen.species,nextGenSpecies[i])
+  end
+
+  speciate(children)  
+  --HAVE TO REMOVE EXAMPLE AFTER SPECIATION
+
+
 
 end

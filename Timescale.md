@@ -7,7 +7,7 @@ Finish mutation()\
   -addNode() DONE!
 
 
-#### 18/06/2019
+#### 18/06/2019 - 19/06/2019
 
 Finish makeNode() DONE!
 Finish randomNodes() DONE!
@@ -20,12 +20,14 @@ Finish createPop()
   -Potentially need to alter the functions for ranking depending on design choice DONE!
   -For implementing SUS, going to just use it for finding the number of children allocated to each species DONE!
   -recombination()
-  -blankSpecies()
-  -speciate()
-  -addToSpecies()
+
 
 #### 20/06/2019
 
+Combine child tables after breed
+-stale() DONE!
+-blankSpecies() no longer required!
+-speciate()
 Something to combat staleness
 Work out particulars of neural net
   -Not currently enforcing feed forward
