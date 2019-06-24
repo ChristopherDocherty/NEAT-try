@@ -36,7 +36,11 @@ Something to combat staleness DONE!
 ###24/06/2019
 
 Work out particulars of neural net
-  -Not currently enforcing feed forward
+  -Now enforcing feed forward
+    -getMaxDistance()
+    -Edit randomNodes
+  -the outputs are strictly buttons
+
 Create fitness function using same inputs as SethBling
 
 #### 21/06/2019

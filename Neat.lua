@@ -38,9 +38,13 @@ outputs = 0
 
 --Data structures
 
+
+
+---for storing nodes
 inno = {}
 inno.data = {}
 inno.count = 0
+
 
 --Unless i can think of some otehr information I have to store thendelete this later
 --can define nodes implicitly in innovation structure
@@ -59,7 +63,7 @@ function makeNode(genome,gene)
   while found = false & i <= #inno.data do
 
 
-    if gene.I == inno.data[i].input & gene.O = inno.data[i].output then
+    if gene.I == inno.data[i].input & gene.O == inno.data[i].output then
       found = true
       nodeID = i
     end
@@ -71,6 +75,7 @@ function makeNode(genome,gene)
     local temp = {}
     temp.input = gene.I
     temp.output = gene.O
+    temp.outNum = 0
     table.insert(inno.data,temp)--IMPORTANT for format of data in table
     nodeID = #inno.data
   end
@@ -115,7 +120,10 @@ function makeGenome()
   genome.globalRank = 0
   genome.fitness = 0
   genome.nodeNum = 0
-
+  --Use this one for making the neural network
+  genome.networkI = {}
+  --Use this one for getting distance of node
+  genome.networkO = {}
 
   return genome
 
@@ -123,6 +131,7 @@ end
 
 
 function makeSpecies()
+
 
   local species
 
@@ -156,31 +165,7 @@ function makeGen()
 
 end
 
---Add to functions
 
-function addToSpecies(genome)
-
-end
-
---Meta mutate functions
-
---Not going to enforce feed forward network in this case
---BUt can if that turns out to be easier during the NN stage
-function distanceFromI()
-
-
-
-end
-
-function removeOutputs (inno)
-
-  for i = 1,outputs do
-
-    table.remove(inno,i)
-  end
-
-
-end
 
 function cauchyStep()
 
@@ -192,19 +177,95 @@ function cauchyStep()
 
 end
 
+--[[Have a feeling this may not be as computationally expensive as I thought so
+I'm going to try and implement it]]
+function getMaxDistance(node,genome)
+
+
+  local outputList = genome.networkO
+
+  --Dealing with case of non ouputting node
+  if outputList[node] = nil then
+    return 0
+  end
+
+
+  local currentTable = {}
+  currentTable.nodes = {}
+  currentTable.depth = 0
+
+  --Initialisation
+  table.insert(currentTable[1].nodes,outputList[node])
+  currentTable[1].depth = 1
+
+
+  local maxD = 0
+
+
+  --[[I know how many connections there are as each gene is a connection
+  and that means that I can determine how many links to check]]
+--Above not true so better condition required
+-- Have to make list of all nodes not checked
+  while #currentTable ~= 0 do
+
+    if currentTable[#currentTable] = nil then
+      if currentTable[#currentTable].depth > maxD then
+        maxD = currentTable[#currentTable].depth
+      end
+      table.remove(currentTable)
+    else
+
+      local tableLen = #currentTable
+      for i = 1,#currentTable[tableLen].nodes do
+        local nodeAdd = currentTable[tableLen].nodes[i]
+
+        table.insert(currentTable[#currentTable +1].nodes,nodeAdd)
+        currentTable[#currentTable +1].depth = currentTable[tableLen].depth +1
+
+      end
+
+      table.remove(currentTable,tableLen)
+
+
+    end
+  end
+
+  return maxD
+
+end
+
 
 function randomNodes(genome)
   --Always want 2 nodes out
   --This function needs to get a unique (for the genome) pair of nodes
-  --If wanting a feed forward network the need distanceFromI funciton
-
+  --Implementing feed forward network is a lot easier in here I think so I do it
+  --[[the maximum distance is the most important part here, if this is enforced
+  from the beginning then it makes sure that comparing maximum distance tells
+  us whether the new connection will be recurrent or not. It does reduce the
+  problem space but saves pruning]]
 
   local geneList = genome.genes
-  local innoCopy = inno.data
-  --Get rid of outputs for RNG
-  for i = 1,outputs do
-    table.remove(inno,i)
+
+
+  --Going to save into networkO on genome
+
+  --This prepares a list of all nodes with a list of all input to sed node
+  for i = 1,#geneList do
+    local Onode = geneList[i].ouput
+    --going to have to save current list of outputs and then add new one
+    if genome.networkO[Onode] ~= nil then
+      local tempOlist = genome.network0[Onode]
+    else
+      local tempOlist = {}
+    end
+
+    table.insert(tempOlist,geneList[i].I)
+
+    --Remove and replace at position of output
+    table.remove(genome.networkO,Onode)
+    table.insert(genome.networkO,Onode,tempOlist)
   end
+
 
   --Finding if unique and regenerateing if not
   local unique = false
@@ -212,15 +273,22 @@ function randomNodes(genome)
 
     local found = false
 
-    --giving random values
-    I = innoCopy[math.random(1,#inno_copy)]
-    O = inno.data[math.random(inputs+1,#inno.data)]
+    local feedFor = false
 
-    --Search for gene
+    while feedFor = false do
+      --giving random values
+      I = innoCopy[math.random(1,#innoCopy)]
+      O = inno.data[math.random(inputs+1,#inno.data)]
+
+      feedFor = getMaxDistance(I,genome) < getMaxDistance(O,genome)
+    end
+
+
+    --Search for gene, can probably imrpove in light of list but will come back
     local i = 1
     while found = false & i < #genome.genes do
 
-      if I == geneList.I & O = geneList.O then --Pretty sure this works
+      if I == geneList.I & O == geneList.O then --Pretty sure this works
         found = true
       end
 

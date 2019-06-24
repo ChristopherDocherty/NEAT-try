@@ -146,6 +146,59 @@ Each a separate function
 Neural net design
 
 
+Because I have to enforce feed forward (it seems like the easiest way to
+implement) I will now be storing the network as each input node with its
+given outputs
+
+
+in randomNodes() I am going to make a table where the index is the output node
+and each entry is a table of input nodes. There will be no repeat inputs as
+every time a link is added uniqueness is checked.
+
+From this list I can then, in getMaxDistance(), work through all paths of the
+tree the neural net makes and get distance.
+
+So, how to work through all the paths?
+
+Every time I will insert multiple list's {} of inputs and increase the distance
+by 1, if I continue to do this until i get to an input node (i.e.
+outputList[node] = nil) then I can compare with maxD (change if necessary),
+remove that line from current table and reiterate.
+
+NOt quite perfect, will have to remove a level from currentTable each time i've iterated over it and incremented depth
+
+
+So,
+
+-check if any nodes left in the index of currentTable being accessed in this
+cycle, if none then compare with maxD and remove from currentTable.
+Will be nil if outputList for the node is nil
+-If yes then add each nodes outputList entry to currentTable and increment
+depth (and link count), also remove current layer from currentTable
+
+
+need to test if table.remove() will do shifting if there are nil entries!!
+
+
+
+
+
+So this will just be:
+
+-finding what nodes go into which other nodes\
+-Sum up inputs with weights for earliest nodes\
+  -Need to determine which nodes are first\
+-Use sigmoid function to determine the output\
+-Continue along until outputs\
+-Give outputs
+
+
+
+
+
+
+
+
 ### Part 5
 
 Simulation design
