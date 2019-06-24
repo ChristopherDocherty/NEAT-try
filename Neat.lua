@@ -603,26 +603,16 @@ function breed()
 end
 
 
-function stale()
-
-  for i =1,#gen.species do
-
-    if s
-
-  end
-
-end
-
 function createPop()
 
-  local children = {}
+  local childtemp = {}
 
 
 
   for i = 1,#gen.species do
     --Elitism
     if species[i].elite ~= nil then
-      table.insert(children,gen.species[i].elite)
+      table.insert(childtemp,gen.species[i].elite)
       table.remove(gen.species[i].elite)
       gen.eliteNum = gen.eliteNum +1
     end
@@ -638,10 +628,13 @@ function createPop()
    killWeaklings()
    --meaning sort and remove bottom so many
 
-   childtemp = breed()
+   children = breed()
 
-   --use table.move() to combine children and childtemp
-   children = table.move() --etc....
+   --Adding the elite members into the children
+   for i = 1,#childtemp do
+     table.insert(children,childtemp[i])
+   end
+
 
    local nextGenSpecies = {}
 
@@ -660,33 +653,161 @@ function createPop()
 
 end
 
+--for disjoint not considering equal case
+--Strategy here is to make a table where there is only an i'th entry if
+--the i'th gene is disjoint
+function sameSpecies(genome1,species)
 
-function Speciate(children)
+  --May be wrong to have this [1], also kind of redunandat to have best member and example...
+  local genome2 = species.example[1]
 
-  for i = 1,#children do
+  --Actually counting disjoint and excess
+  dNum, avWdif = constantGet(genome1,genome2)
 
-    local child = children[i]
+ --following paper for size of N
+  if #genome1.genes < 20 and #genome2.genes < 20 then
+    N = 1
+  else
+    if #genome1.genes > #genome2.genes then
+      N = #genome1.genes
+    else
+      N = #genome2.genes
+    end
+  end
+
+  local delta = c1 * dNum/N + c3 * avWdif
+
+  if delta < deltaT then
+    return true
+  else
+    return false
+  end
+
+end
+
+
+
+
+
+--Will almost certainly have to look this one over...
+function constantGet(genome1,genome2)
+
+
+  local i1 = {}
+  for i = 1,#genome1.genes do
+    local gene = genome1.gene[i]
+    local temptable = {}
+    --For disjoint
+    temptable.inno = true
+    --for weight
+    temptable.geneNum = i
+    table.insert(i1,temptable)
+  end
+
+  local i2 = {}
+  for i = 1,#genome2.genes do
+    local gene = genome2.gene[i]
+    local temptable = {}
+    --For disjoint
+    temptable.inno = true
+    --for weight
+    temptable.geneNum = i
+      table.insert(i2,temptable)
+  end
+
+
+  local disjointNum = 0
+  local totalWdif = 0
+  local countW = 0
+
+  for i = 1,#genome1.genes do
+    local gene = genome1.gene[i]
+    local num = gene.innovation
+    if  i2[num].inno then
+
+      countW = countW + 1
+      --Looks nasty but is just finding the right gene for difference in genome2
+      local wdif = math.abs((gene.weight - genome2.gene[i2[num].geneNum].weight))
+      totalWdif = totalWdif + wdif
+    else
+      disjointNum = disjointNum +1
+    end
+  end
+
+  for i = 1,#genome2.genes do
+    local gene = genome2.gene[i]
+    local num = gene.innovation
+    if  i1[num].inno then
+
+      countW = countW + 1
+      --Looks nasty but is just finding the right gene for difference in genome2
+      local wdif = math.abs((gene.weight - genome2.gene[i2[num].geneNum].weight))
+      totalWdif = totalWdif + wdif
+    else
+      disjointNum = disjointNum +1
+    end
+  end
+
+local avWdif = totalWdif / countW
+
+
+
+return disjointNum,avWdif
+
+
+
+end
+
+
+
+
+function speciate(children,table)
+
+
+  if table = true then
+    for i = 1,#children do
+
+      local child = children[i]
+      local found = false
+      local count = 1
+      while count <= #gen.species & found == false do
+
+        found = sameSpecies(child,gen.species[count])
+
+      end
+
+      if found = true then
+        table.insert(child,gen.species[count])
+      else
+        local newSpecies = makeSpecies()
+        table.insert(newSpecies.genomes,child)
+        --If i want to change example have to alter here
+        table.insert(newSpecies.example,child)
+        table.insert(gen.species,newSpecies)
+      end
+
+
+    end
+  else
+
+
     local found = false
     local count = 1
     while count <= #gen.species & found == false do
 
-      found = sameSpecies(child,gen.species[count])
+      found = sameSpecies(children,gen.species[count])
 
     end
 
     if found = true then
-      addToSpecies(child,count)
+      table.insert(children,gen.species[count])
     else
       local newSpecies = makeSpecies()
-      table.insert(newSpecies,child)
-      table.imsert
+      table.insert(newSpecies,children)
+      table.insert(gen.species,newSpecies)
     end
 
-
   end
-
-
-
 
 end
 
@@ -707,7 +828,8 @@ for i = 1,population do
   local genome = makeGenome()
 
   genome = addlink(genome)
-  addToSpecies(genome)
+  --Performing speciation for only one genome
+  speciate(genome,false)
 
 end
 
@@ -726,8 +848,7 @@ while true do
 
   offspringAssign()
 
-  local children = {}
-  local nextGenSpecies ={}
+
   children, nextGenSpecies = createPop()
 
 
@@ -737,8 +858,8 @@ while true do
   end
 
 
-  speciate(children)
-  --HAVE TO REMOVE EXAMPLE AFTER SPECIATION
+  speciate(children,true)
+
 
 
 

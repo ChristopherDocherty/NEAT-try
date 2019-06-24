@@ -27,8 +27,14 @@ Finish createPop()
 Combine child tables after breed
 -stale() DONE!
 -blankSpecies() no longer required!
--speciate()
+-speciate() DONE!
+  -Just need sameSpecies()\ DONE!
 Something to combat staleness DONE!
+-Have to check i'm not messing up in changing the example everytime!! HAVEN'T!
+
+
+###24/06/2019
+
 Work out particulars of neural net
   -Not currently enforcing feed forward
 Create fitness function using same inputs as SethBling
