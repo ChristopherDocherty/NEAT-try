@@ -31,8 +31,8 @@ deltaT = 3
 staleLim = 15
 
 --Terminals of neural net
-inputs = 0
-outputs = 0
+inputNum = 0
+outputNum = 0
 
 
 
@@ -208,7 +208,7 @@ function getMaxDistance(node,genome)
 -- Have to make list of all nodes not checked
   while #currentTable ~= 0 do
 
-    if currentTable[#currentTable] = nil then
+    if currentTable[#currentTable].nodes = nil then
       if currentTable[#currentTable].depth > maxD then
         maxD = currentTable[#currentTable].depth
       end
@@ -219,7 +219,7 @@ function getMaxDistance(node,genome)
       for i = 1,#currentTable[tableLen].nodes do
         local nodeAdd = currentTable[tableLen].nodes[i]
 
-        table.insert(currentTable[#currentTable +1].nodes,nodeAdd)
+        table.insert(currentTable[#currentTable +1].nodes,outputList[nodeAdd])
         currentTable[#currentTable +1].depth = currentTable[tableLen].depth +1
 
       end
@@ -251,7 +251,7 @@ function randomNodes(genome)
 
   --This prepares a list of all nodes with a list of all input to sed node
   for i = 1,#geneList do
-    local Onode = geneList[i].ouput
+    local Onode = geneList[i].O
     --going to have to save current list of outputs and then add new one
     if genome.networkO[Onode] ~= nil then
       local tempOlist = genome.network0[Onode]
@@ -278,7 +278,7 @@ function randomNodes(genome)
     while feedFor = false do
       --giving random values
       I = innoCopy[math.random(1,#innoCopy)]
-      O = inno.data[math.random(inputs+1,#inno.data)]
+      O = inno.data[math.random(inputNum+1,#inno.data)]
 
       feedFor = getMaxDistance(I,genome) < getMaxDistance(O,genome)
     end

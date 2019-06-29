@@ -168,6 +168,15 @@ remove that line from current table and reiterate.
 NOt quite perfect, will have to remove a level from currentTable each time i've iterated over it and incremented depth
 
 
+
+Going
+
+
+
+
+
+
+
 So,
 
 -check if any nodes left in the index of currentTable being accessed in this
@@ -186,14 +195,28 @@ need to test if table.remove() will do shifting if there are nil entries!!
 So this will just be:
 
 -finding what nodes go into which other nodes\
+  -In networkI have list of genes in table for given node rather than outputs
 -Sum up inputs with weights for earliest nodes\
-  -Need to determine which nodes are first\
+  -Start with inputs
+  -Calculate sum
+    -Will have to store in something, use index trick again
+  -Next nodes are taken from networkI
+  -Repeat
+  -Going to make a choice to store outputs in the next entries after inputs
+  inside inno.data structure
+    --Therefore just need to use output to determine button press
+
+
+
 -Use sigmoid function to determine the output\
 -Continue along until outputs\
 -Give outputs
+  -saved in controller table which I will understand better once I have inputs\
+  for this thing
 
 
-
+IMPORTANT: table funcitons don't really work if there are entries left out
+(insert does still but not shifting of elements)
 
 
 

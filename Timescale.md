@@ -33,17 +33,19 @@ Something to combat staleness DONE!
 -Have to check i'm not messing up in changing the example everytime!! HAVEN'T!
 
 
-###24/06/2019
+###24/06/2019 - 29/06/2019
 
 Work out particulars of neural net
-  -Now enforcing feed forward
-    -getMaxDistance()
-    -Edit randomNodes
+  -Now enforcing feed forward DONE!
+    -getMaxDistance() DONE!
+    -Edit randomNodes DONE!
   -the outputs are strictly buttons
+
+  GOT NEURAL NET DONE!!
 
 Create fitness function using same inputs as SethBling
 
-#### 21/06/2019
+#### 30/06/2019
 
 Get file storage down\
   -not keeping track of generation explicitly just store separately in file part\
