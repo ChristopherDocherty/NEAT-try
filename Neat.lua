@@ -4,11 +4,12 @@ necessary data ot actually runthe algorithm
 
 --Constants
 population =150
-genNum = 1
+genNum = 0
 nodeNum = 0
 innovation = 0
 stepSize = 0.01 --From NEAT paper
 propForDeath = 0.5
+TimeoutConstant = 20 --For genomes that are stuck
 
 --Mutation Constants
 mChance = 0.25
@@ -30,9 +31,6 @@ c3 = 0.4
 deltaT = 3
 staleLim = 15
 
---Terminals of neural net
-inputNum = 0
-outputNum = 0
 
 
 
@@ -40,14 +38,42 @@ outputNum = 0
 
 
 
----for storing nodes
+---have to store I/O's in here
 inno = {}
-inno.data = {}
-inno.count = 0
+inno.genes = {}
+--for genes use .I and .O
+inno.nodes = {}
+--fir ndoes use .input and .output
+--[[
+As part of initialsiation I have to add the input and output nodes to
+inno.nodes if I or O is 0 then it is an I/O node
+]]
+
+for i = 1 to inputNum do
+  local temp = {}
+  temp.input = 0
+  temp.output = -1
+  table.insert(inno.nodes,temp)
+end
+
+for i = 1 to ouputNum do
+
+  local temp = {}
+  temp.input = -1
+  temp.output = 0
+  table.insert(inno.nodes, temp)
+end
+--[[
+I can't create an equivalent node for any I/O node so I make one of their
+attributes a negative number (obviously invalid). This allows me to put them in
+the table (so i can correctly choose random nodes) without potentially matching
+a new ndoe to it
+]]
 
 
---Unless i can think of some otehr information I have to store thendelete this later
---can define nodes implicitly in innovation structure
+
+
+--^^ is necessary for checking if new innovation occurs
 --Store the connection I/O that the node disrupts in here
 
 
@@ -60,10 +86,10 @@ function makeNode(genome,gene)
 
   local i = 1
 
-  while found = false & i <= #inno.data do
+  while found = false & i <= #inno.nodes do
 
 
-    if gene.I == inno.data[i].input & gene.O == inno.data[i].output then
+    if gene.I == inno.nodes[i].input & gene.O == inno.nodes[i].output then
       found = true
       nodeID = i
     end
@@ -75,9 +101,9 @@ function makeNode(genome,gene)
     local temp = {}
     temp.input = gene.I
     temp.output = gene.O
-    temp.outNum = 0
-    table.insert(inno.data,temp)--IMPORTANT for format of data in table
-    nodeID = #inno.data
+
+    table.insert(inno.nodes,temp)--IMPORTANT for format of data in table
+    nodeID = #inno.nodes
   end
 
   return nodeID
@@ -101,10 +127,6 @@ function makeGene()
   gene.weight = 0
   gene.enable = true
   gene.innovation = 0
-  --[[gene.innovation = 1
-can add this back in if I want to keep track from some reaosn
-but there is no need given innovation number is implicitly defined
-]]
 
   return gene
 
@@ -159,6 +181,10 @@ function makeGen()
   gen.maxFitness = 0
   gen.totalF = 0
   gen.eliteNum = 0
+  --Added for keeping track fo what has been tested in main loop
+  gen.currentGenome = 1
+  gen.currentSpecies = 1
+  gen.frame = 1
 
 
   return gen
@@ -247,8 +273,8 @@ function randomNodes(genome)
   local geneList = genome.genes
 
 
-  --Going to save into networkO on genome
 
+  --Making networkO solely for getMaxDistance
   --This prepares a list of all nodes with a list of all input to sed node
   for i = 1,#geneList do
     local Onode = geneList[i].O
@@ -267,28 +293,38 @@ function randomNodes(genome)
   end
 
 
+
+
+
+
   --Finding if unique and regenerateing if not
   local unique = false
   while unique = false do
 
-    local found = false
 
     local feedFor = false
 
     while feedFor = false do
       --giving random values
-      I = innoCopy[math.random(1,#innoCopy)]
-      O = inno.data[math.random(inputNum+1,#inno.data)]
+
+      --Need to use this loop so that an output node isn't chosen
+      I = inputNum +1
+      while I >inputNum and I <= (inputNum + outputNum) do
+        I = inno.nodes[math.random(1,#inno.nodes)]
+      end
+      --This is okay becasue only first inputNum'th entries are input nodes
+      O = inno.nodes[math.random(inputNum+1,#inno.nodes)]
 
       feedFor = getMaxDistance(I,genome) < getMaxDistance(O,genome)
     end
 
 
     --Search for gene, can probably imrpove in light of list but will come back
+    local found = false
     local i = 1
     while found = false & i < #genome.genes do
 
-      if I == geneList.I & O == geneList.O then --Pretty sure this works
+      if I == geneList.I & O == geneList.O then
         found = true
       end
 
@@ -310,21 +346,24 @@ function getInno(I,O)
 
 
   local found = false
-
   local i = 1
 
-  while found = false & i <= #inno.data do
+  while found = false & i <= #inno.genes do
 
-    if gene.I == inno.data[i].input & gene.O = inno.data[i].output then
+    if gene.I == inno.genes[i].I & gene.O = inno.genes[i].O then
       found = true
     end
 
     i = i + 1
   end
 
+--If not found then add to global list of innovations
   if found == false then
-    inno.count = inno.count + 1
-    return inno.count
+    local temp = {}
+    temp.I = gene.I
+    temp.O = gene.O
+    table.insert(inno.genes,temp)
+    return #inno.genes
   else
     return i
   end
@@ -450,10 +489,15 @@ table.sort(forSort, function (a,b)
 
   for i = 1,#forSort do
 
-    forSort.globalRank[i] = i
+    forSort[i].globalRank = i
     --Still pretty sure this works
-    totalF = totalF + forSort.fitness
+    totalF = totalF + forSort[i].fitness
   end
+
+
+
+
+
 
 end
 
@@ -587,7 +631,7 @@ function killWeaklings()
 end
 
 --Going to leave out case where g1 fitness is same as g2
-function recommbine(g1,g2)
+function recombine(g1,g2)
 
   local equal = false
   local child = makeGenome()
@@ -882,32 +926,41 @@ end
 
 
 --Initialisation
+function clearJoypad()
+	controller = {}
+	for b = 1,#ButtonNames do
+		controller["P1 " .. ButtonNames[b]] = false
+	end
+	joypad.set(controller)
+end
 
-gen = makeGen()
 
---[[
-Find number of inputs and outpus and put here
 
-]]
+function initialise()
+  --Will start currents on 1
+  gen = makeGen()
 
---Speciate on the fly
-for i = 1,population do
+  --Speciate on the fly
+  for i = 1,population do
 
-  local genome = makeGenome()
+    local genome = makeGenome()
 
-  genome = addlink(genome)
-  --Performing speciation for only one genome
-  speciate(genome,false)
+    addlink(genome)
+    --Performing speciation for only one genome
+    speciate(genome,false)
+
+  end
+
+  clearJoypad()
 
 end
 
 
-while true do
+function nextGen()
 
-  fitnessEval()
   genRank()
 
---Probably inefficient method
+  --Probably inefficient method
   for i =1,#gen.species do
     --Species ranking and summation of
     speciesRank(gen.species[i])
@@ -927,6 +980,106 @@ while true do
 
 
   speciate(children,true)
+
+end
+
+--For main loop
+
+function nextGenome()
+
+  gen.currentGenome = gen.currentGenome + 1
+  if gen.currentGenome > #gen.species[currentSpecies].genomes then
+    gen.currentSpecies = gen.currentSpecies + 1
+    gen.currentGenome = 1
+  end
+  if gen.currentSpecies > #gen.species then
+    makeGen()
+    gen.currentSpecies = 1
+  end
+
+end
+
+function fitnessMeasured()
+
+  local s = gen.species[gen.currentSpecies]
+  local g = species.genomes[gen.currentGenome]
+
+  return g.fitness ~= 0
+
+end
+
+
+--Start of actual code
+
+
+initialise()
+
+
+while true do
+
+  species = gen.species[gen.currentSpecies]
+  genome = species.genomes[gen.currentGenome]
+
+
+  if pool.currentFrame%5 == 0 then
+		evaluateCurrent(genome)
+	end
+
+  joypad.set(controller)
+
+  getPositions()
+  if marioX > rightmost then
+  		rightmost = marioX
+  		timeout = TimeoutConstant
+  end
+
+  timeout = timeout - 1
+
+
+  --evaluate fitness
+  local fitness = rightmost - gen.frame / 2
+  gui.drawText(0,0,"Fitness:" .. tostring(fitness))
+
+
+  if pool.currentFrame%5 == 0 then
+		evaluateCurrent(genome)
+	end
+
+  local timeoutBonus = pool.currentFrame / 4
+	if timeout + timeoutBonus <= 0 then
+		 fitness = rightmost - gen.frame / 2
+		if rightmost > 4816 then
+			fitness = fitness + 1000
+		end
+
+    --to get rid of species with awful fitness
+		if fitness == 0 then
+			fitness = -1
+		end
+		genome.fitness = fitness
+
+		console.writeline("Gen " .. gen.number .. " species " .. gen.currentSpecies .. " genome " .. gen.currentGenome .. " fitness: " .. fitness)
+
+
+    pool.currentSpecies = 1
+		pool.currentGenome = 1
+		while fitnessMeasured()  do
+			nextGenome()
+		end
+		initializeRun()
+
+    gen.frame = gen.frame + 1
+
+    emu.frameAdvance()
+	end
+
+
+
+
+
+
+
+
 
 
 

@@ -226,12 +226,55 @@ IMPORTANT: table funcitons don't really work if there are entries left out
 
 Simulation design
 -Copy SethBling
-
+  -Just took enough of the code to get the inputs and output names
 
 ### Part 6
 
-Fitness function design
+Now I need to decide how I am going execute this in the loop.
+
+  -In initialisation have to clearJoypad DONE!
+
+
+  -Each genome must be tested
+    -Every frame check for timeout
+    -Every frame evaluate fitness and display using gui.drawText()
+
+    -Only find outputs every 5th frame
+
+    -Once timeout occurs
+      -save fitness to genome
+      -iterate through genomes (and species if need be) and stop when a\
+      genome has no fitness assigned (This will be fine through newGeneration
+      as children only retain genes from parents NOT fitness)
+
+
+    -Have a variable called speciesDone which is turned true in above function
+      -when true do
+      -rankSpecies
+      -Save top 5 of species into file
+        -Put genNum and speciesNum into file
+      -speciesDone = false
+
+
+
+  -Create onexit that saves current pool
+
+
+
+
+
+
+
+
+
 
 
 ### Part 7
 File Storage for solutions
+
+Have automatic saves in the loop but have a form which allows loading of files
+for replay or continuation
+
+
+Store individual genomes in seperate folder to generations so they can be
+treated differently

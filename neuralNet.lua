@@ -29,7 +29,7 @@ end
 
 function sigmoid(x)
 
-  local result = 1/ (1+e^(-4.9*x))
+  local result = 1/ (1+math.exp(-4.9*x))
   return result
 
 end
@@ -53,11 +53,22 @@ actual entry is a table of the output neurons
 ]]
 
 
-function EvaluateNetwork(genome,inputs)
+function EvaluateNetwork(genome)
+
+  getNetworkI(genome)
+
 
   local currentLayer = {}
   currentLayer.nodes = {}
   local net = genome.networkI
+
+
+
+  --Getting input values to start Evaluation
+  local inputs = getInputs()
+  --^This is an inputNum size table with the value {-1,0,1} fo reach node^
+
+
 
   local outputSum = {}
   local outputCheckRef = {}
@@ -67,20 +78,13 @@ function EvaluateNetwork(genome,inputs)
   for i = 1,inputNum do
     if net[i] ~= nil then
       table.insert(tempTable,i)
-      --IMPORTANT need to add taking plus or minus - will be able to once input part done
+      outputSum[i] =  inputs[i]
+      outputCheckRef[i] = true
       --After having done the above, the first neurons output will be recorded in outputSum. (outputCheckRef also updated)
     end
   end
   table.insert(currentLayer[1].nodes,tempTable)
 --These inital inputs will be 1 if standable block, -1 if enemy and 0 if nothing
-
-
-
-
-
-
-
-
 
 --Creating a condition that, while there is anything in current layer, will repeat
   while currentLayer[1].nodes ~= nil do
@@ -92,7 +96,7 @@ function EvaluateNetwork(genome,inputs)
     --iterate over all input nodes in this layer
     for i = 1,#currentLayer[1].nodes do
 
-      --So inputNodeNumO is just the number of a node
+      --So inputNodeNum is just the number of a node
       local inputNodeNum = currentLayer[1].nodes[i]
 
       --Making sure not a terminal node
@@ -109,11 +113,14 @@ function EvaluateNetwork(genome,inputs)
             table.insert(nextLayer,genesI[j].O)
           end
         end
+
       else
 
         if sigmoid(outputSum[inputNodeNum]) > 0.5 then
-          --do inputNodeNume - #inputs to give an index for controller table
-          --IMPORANT MUST FINISH HERE AFTER DON OUTPUTS
+          --do inputNodeNum - #inputs to give an index for controller table
+
+		      controller["P1 " .. ButtonNames[inputNodeNum-#inputs]] = true
+
         end
 
       end
@@ -132,5 +139,8 @@ function EvaluateNetwork(genome,inputs)
 
 
   end
+
+
+
 
 end
