@@ -179,7 +179,7 @@ function makeGen()
   gen.number = genNum
   gen.species = {}
   gen.maxFitness = 0
-  gen.totalF = 0
+  --gen.totalF = 0
   gen.eliteNum = 0
   --Added for keeping track fo what has been tested in main loop
   gen.currentGenome = 1
@@ -469,7 +469,7 @@ end
 function genRank()
 
   local forSort = {}
-  local totalF = gen.totalF
+  --local totalF = gen.totalF
 
   for i = 1,#gen.species do
 
@@ -487,23 +487,19 @@ table.sort(forSort, function (a,b)
   end
   )
 
-  for i = 1,#forSort do
+--[[  for i = 1,#forSort do
 
     forSort[i].globalRank = i
     --Still pretty sure this works
     totalF = totalF + forSort[i].fitness
   end
-
-
-
-
-
-
+]] no idea why this is here
 end
+
 
 --Make species rank also sum so it is quicker
 --May need to change this function based on whether i parameter pass or not
-function speciesRank(species)
+function speciesRank(species,speciesNum)
 
   local forSort = {}
   local sum = 0
@@ -544,6 +540,17 @@ function speciesRank(species)
     species.staleness = species.staleness + 1
   end
 
+
+  --Saving good genomes
+  if #species.genomes >5 do
+    for i = 1 to 5 do
+      saveGenome(species.genomes[i],gen.number,speciesNum,i)
+    end
+  else
+    for i = 1,#species.genomes
+    saveGenome(species.genomes[i],gen.number,speciesNum,i)
+    end
+  end
 end
 
 
@@ -923,6 +930,50 @@ function speciate(children,table)
 
 end
 
+--File functions
+
+function saveGenome(genome, generation, speciesNum, genomeNum)
+
+  local filename = "genomes\\level-YL2-gen" .. tostring(generation) .. "-species-" .. tostring(speciesNum) .. "-genome-" .. tostring(genomeNum) .. ".gen"
+
+
+        local file = io.open(filename, "w")
+  file:write(genome.fitness .. "\n")
+  file:write(generation .. "\n")
+  file:write(species .. "\n")
+  file:write(genome.globalRank .. "\n")
+  file:write(#genome.genes .. "\n")
+
+  for i = 1 to #genome.genes do
+
+    file:write(genome.genes[i].I .. " ")
+    file:write(genome.genes[i].O .. " ")
+    file:write(genome.genes[i].weight .. " ")
+    if genome.genes[i].enable == true then
+      file:write("1 ")
+    else
+      file:write("0 ")
+    end
+    file:write(genome.genes[i].innovation .. "\n")
+  end
+
+        file:close()
+
+end
+
+
+--For on exit
+function saveGen()
+
+  local filename = "Generation-" .. gen.number .. "-Save.gen"
+
+
+
+
+
+
+end
+
 
 
 --Initialisation
@@ -963,7 +1014,8 @@ function nextGen()
   --Probably inefficient method
   for i =1,#gen.species do
     --Species ranking and summation of
-    speciesRank(gen.species[i])
+    --Also storing fittest idnividual's data
+    speciesRank(gen.species[i],i)
   end
 
 
@@ -993,7 +1045,7 @@ function nextGenome()
     gen.currentGenome = 1
   end
   if gen.currentSpecies > #gen.species then
-    makeGen()
+    nextGen()
     gen.currentSpecies = 1
   end
 
@@ -1011,8 +1063,10 @@ end
 
 --Start of actual code
 
+event.onexit(saveGen)
 
 initialise()
+
 
 
 while true do
@@ -1067,21 +1121,10 @@ while true do
 			nextGenome()
 		end
 		initializeRun()
+  end
 
-    gen.frame = gen.frame + 1
+  gen.frame = gen.frame + 1
 
-    emu.frameAdvance()
-	end
-
-
-
-
-
-
-
-
-
-
-
+  emu.frameAdvance()
 
 end

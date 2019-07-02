@@ -272,9 +272,47 @@ Now I need to decide how I am going execute this in the loop.
 ### Part 7
 File Storage for solutions
 
-Have automatic saves in the loop but have a form which allows loading of files
-for replay or continuation
+Can get file storage working nicely with lua+ instead of Nlua
 
 
 Store individual genomes in seperate folder to generations so they can be
 treated differently
+
+use \\ in specifying directory
+
+genome:
+
+generation
+species
+global rank
+number of genes
+  geneList
+
+DONE!
+
+
+On exit need to save generation
+
+for generation need to save everything required to continue code i.e.
+everything kept in newGen()
+
+
+
+  -gen.number
+  -Save innovation data
+
+  -#gen.species
+  -Save species by saving all genomes after each species info
+
+  -species1
+    -staleness
+    -example
+    -genome list
+      -genome1
+      -genome2
+  -species2
+    -staleness
+    -example
+    -genome list
+      -genome1
+      -genome2
