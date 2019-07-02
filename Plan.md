@@ -316,3 +316,10 @@ everything kept in newGen()
     -genome list
       -genome1
       -genome2
+
+DONE!
+
+### Part 8
+
+now I need to make a list of function in order of execution so that I can more
+effectively debug

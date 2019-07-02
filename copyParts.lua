@@ -132,15 +132,14 @@ end
 
 
 --MUST CHANGE
-function initializeRun()
+function initialiseRun()
 	savestate.load(Filename);
 	rightmost = 0
-	pool.currentFrame = 0
+	gen.currentFrame = 0
 	timeout = TimeoutConstant
 	clearJoypad()
 
-	local species = pool.species[pool.currentSpecies]
-	local genome = species.genomes[pool.currentGenome]
-	generateNetwork(genome)
-	evaluateCurrent()
+	local species = gen.species[gen.currentSpecies]
+	local genome = species.genomes[gen.currentGenome]
+	evaluateNetwork(genome)
 end

@@ -32,6 +32,138 @@ deltaT = 3
 staleLim = 15
 
 
+--Copied parts
+BoxRadius = 6
+InputSize = (BoxRadius*2+1)*(BoxRadius*2+1)
+
+inputNum = InputSize+1
+outputNum = #ButtonNames
+
+
+
+-- in this exact order, inno.nodes(inputNum) till (inputNum+outputNum)
+--correspond to these buttons
+Filename = "YI2.state"
+ButtonNames = {
+		"A",
+		"B",
+		"X",
+		"Y",
+		"Up",
+		"Down",
+		"Left",
+		"Right",
+}
+
+
+
+
+function clearJoypad()
+	controller = {}
+	for b = 1,#ButtonNames do
+		controller["P1 " .. ButtonNames[b]] = false
+	end
+	joypad.set(controller)
+end
+
+
+
+--Assigns globally
+function getPositions()
+
+		marioX = memory.read_s16_le(0x94)
+		marioY = memory.read_s16_le(0x96)
+
+		local layer1x = memory.read_s16_le(0x1A);
+		local layer1y = memory.read_s16_le(0x1C);
+
+		screenX = marioX-layer1x
+		screenY = marioY-layer1y
+end
+
+
+function getTile(dx, dy)
+
+		x = math.floor((marioX+dx+8)/16)
+		y = math.floor((marioY+dy)/16)
+
+		return memory.readbyte(0x1C800 + math.floor(x/0x10)*0x1B0 + y*0x10 + x%0x10)
+end
+
+
+
+function getSprites()
+
+		local sprites = {}
+		for slot=0,11 do
+			local status = memory.readbyte(0x14C8+slot)
+			if status ~= 0 then
+				spritex = memory.readbyte(0xE4+slot) + memory.readbyte(0x14E0+slot)*256
+				spritey = memory.readbyte(0xD8+slot) + memory.readbyte(0x14D4+slot)*256
+				sprites[#sprites+1] = {["x"]=spritex, ["y"]=spritey}
+			end
+		end
+
+		return sprites
+
+end
+
+function getExtendedSprites()
+
+		local extended = {}
+		for slot=0,11 do
+			local number = memory.readbyte(0x170B+slot)
+			if number ~= 0 then
+				spritex = memory.readbyte(0x171F+slot) + memory.readbyte(0x1733+slot)*256
+				spritey = memory.readbyte(0x1715+slot) + memory.readbyte(0x1729+slot)*256
+				extended[#extended+1] = {["x"]=spritex, ["y"]=spritey}
+			end
+		end
+
+		return extended
+end
+
+
+function getInputs()
+	getPositions()
+
+	sprites = getSprites()
+	extended = getExtendedSprites()
+
+	local inputs = {}
+
+	for dy=-BoxRadius*16,BoxRadius*16,16 do
+		for dx=-BoxRadius*16,BoxRadius*16,16 do
+			inputs[#inputs+1] = 0
+
+			tile = getTile(dx, dy)
+			if tile == 1 and marioY+dy < 0x1B0 then
+				inputs[#inputs] = 1
+			end
+
+			for i = 1,#sprites do
+				distx = math.abs(sprites[i]["x"] - (marioX+dx))
+				disty = math.abs(sprites[i]["y"] - (marioY+dy))
+				if distx <= 8 and disty <= 8 then
+					inputs[#inputs] = -1
+				end
+			end
+
+			for i = 1,#extended do
+				distx = math.abs(extended[i]["x"] - (marioX+dx))
+				disty = math.abs(extended[i]["y"] - (marioY+dy))
+				if distx < 8 and disty < 8 then
+					inputs[#inputs] = -1
+				end
+			end
+		end
+	end
+
+	return inputs
+end
+
+
+
 
 
 --Data structures
@@ -184,7 +316,7 @@ function makeGen()
   --Added for keeping track fo what has been tested in main loop
   gen.currentGenome = 1
   gen.currentSpecies = 1
-  gen.frame = 1
+  gen.frame = 0
 
 
   return gen
@@ -425,18 +557,13 @@ function alterWeight(genome)
 
   local gene = genome.genes
 
-
   if rand <= mPerturb then
-
     for i = 1,#genome.genes do
-
       gene[i].weight =gene.[i].weight + cauchyStep()
-
     end
-
   else
-
     gene[i].weight =  math.random()*4 -2
+  end
 
 end
 
@@ -493,7 +620,7 @@ table.sort(forSort, function (a,b)
     --Still pretty sure this works
     totalF = totalF + forSort[i].fitness
   end
-]] no idea why this is here
+ no idea why this is here]]
 end
 
 
@@ -991,7 +1118,7 @@ function saveGen()
     file:write(i .. "\n")
     file:write(gen.species[i].staleness)
     file:write(gen.species[i].example)
-    
+
     local genomes = gen.species[i].genomes
     file:write(#genomes)
     for j = 1,#genomes do
@@ -1021,6 +1148,17 @@ function clearJoypad()
 	joypad.set(controller)
 end
 
+function initialiseRun()
+	savestate.load(Filename);
+	rightmost = 0
+	gen.currentFrame = 0
+	timeout = TimeoutConstant
+	clearJoypad()
+
+	local species = gen.species[gen.currentSpecies]
+	local genome = species.genomes[gen.currentGenome]
+	evaluateNetwork(genome)
+end
 
 
 function initialise()
@@ -1039,6 +1177,8 @@ function initialise()
   end
 
   clearJoypad()
+
+  initialiseRun()
 
 end
 
@@ -1070,6 +1210,140 @@ function nextGen()
   speciate(children,true)
 
 end
+
+--For neural net
+
+--Saves a list of genes coming from each input
+function getNetworkI(genome)
+
+  local geneList = genome.genes
+
+
+  --Going to save into networkI on genome
+
+  --This prepares a list of all nodes with a list of all genes from sed node
+  for i = 1,#geneList do
+    local Inode = geneList[i].I
+    --going to have to save current list of genes and then add new one
+    if genome.networkI[Inode] ~= nil then
+      local tempIlist = genome.networkI[Inode]
+    else
+      local tempIlist = {}
+    end
+
+    table.insert(tempIlist,geneList[i])
+
+    --Remove and replace at position of output
+    table.remove(genome.networkI,Inode)
+    table.insert(genome.networkI,Inode,tempIlist)
+  end
+
+
+end
+
+function sigmoid(x)
+
+  local result = 1/ (1+math.exp(-4.9*x))
+  return result
+
+end
+
+
+
+
+
+
+--[[
+So I don't have to worry about a node not having all its inputs so long as I
+take all the outputs for a given distance at the same time and calculate them.
+This is because I have enforced that the input's distance must be less than the
+outputs distance so no node can be connected to by anything at the same distance or further away fromthe initial inputs.
+]]
+
+
+--[[
+The structure of networkI is that the index represents the neuron and the
+actual entry is a table of the output neurons
+]]
+
+
+function EvaluateNetwork(genome)
+
+  getNetworkI(genome)
+
+
+  local currentLayer = {}
+  currentLayer.nodes = {}
+  local net = genome.networkI
+
+
+  --Getting input values to start Evaluation
+  local inputs = getInputs()
+  --^This is an inputNum size table with the value {-1,0,1} fo reach node^
+
+  local outputSum = {}
+  local outputCheckRef = {}
+
+  --Initialising by adding the inputs that are firing into the current layer table
+  local tempTable = {}
+  for i = 1,inputNum do
+    if net[i] ~= nil then
+      table.insert(tempTable,i)
+      outputSum[i] =  inputs[i]
+      outputCheckRef[i] = true
+      --After having done the above, the first neurons output will be recorded in outputSum. (outputCheckRef also updated)
+    end
+  end
+  table.insert(currentLayer[1].nodes,tempTable)
+--These inital inputs will be 1 if standable block, -1 if enemy and 0 if nothing
+
+--Creating a condition that, while there is anything in current layer, will repeat
+  while currentLayer[1].nodes ~= nil do
+
+    --Temporary table to store next layer in
+    local nextLayer = {}
+
+    --iterate over all input nodes in this layer
+    for i = 1,#currentLayer[1].nodes do
+
+      --So inputNodeNum is just the number of a node
+      local inputNodeNum = currentLayer[1].nodes[i]
+
+      --Making sure not a terminal node
+      if #net[inputNodeNum] ~= 0 then
+        --iterate over all output nodes for this node
+        local genesI = net[inputNodeNum]
+        for j = 1,#genesI do
+          --add to their sum, index i is meaning the current input node
+          outputSum[genesI[j].O] = outputSum[genesI[j].O] + sigmoid(outputSum[inputNodeNum]) * genesI.weight
+          --IMPRTANT!!!! applying sigmoid here, should be okay but should still check
+          --also add them to nextLayer if outputCheckRef = false
+          if outputCheckRef[genesI[j].O] = false then
+            outputCheckRef[genesI[j].O] = true
+            table.insert(nextLayer,genesI[j].O)
+          end
+        end
+
+      else
+        if sigmoid(outputSum[inputNodeNum]) > 0.5 then
+          --do inputNodeNum - #inputs to give an index for controller table
+
+		      controller["P1 " .. ButtonNames[inputNodeNum-#inputs]] = true
+        end
+      end
+    end
+
+    --Remove current layer
+      table.remove(currentLayer[1].nodes)
+
+    --Add new layer
+    --TO make sure condition is broken when only output nodes are given
+    if #nextLayer ~= 0
+      table.insert(currentLayer[1].nodes,NextLayer)
+    end
+  end
+end
+
 
 --For main loop
 
@@ -1131,10 +1405,6 @@ while true do
   gui.drawText(0,0,"Fitness:" .. tostring(fitness))
 
 
-  if pool.currentFrame%5 == 0 then
-		evaluateCurrent(genome)
-	end
-
   local timeoutBonus = pool.currentFrame / 4
 	if timeout + timeoutBonus <= 0 then
 		 fitness = rightmost - gen.frame / 2
@@ -1156,7 +1426,7 @@ while true do
 		while fitnessMeasured()  do
 			nextGenome()
 		end
-		initializeRun()
+		initialiseRun()
   end
 
   gen.frame = gen.frame + 1
