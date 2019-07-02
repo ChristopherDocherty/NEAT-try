@@ -967,11 +967,47 @@ function saveGen()
 
   local filename = "Generation-" .. gen.number .. "-Save.gen"
 
+        file = io.open(filename)
+  file:write(gen.number .. "\n\n")
 
+  file:write(#inno.genes .. "/n")
+  for i = 1,#inno.genes do
+    file:write(inno.genes[i].I .. " ")
+    file:write(inno.genes[i].O .. "\n")
+  end
 
+  file:write("\n")
 
+  file:write(#inno.nodes .."\n")
+  for i = 1,#inno.nodes do
+    file:write(inno.nodes[i] .. " ")
+    fiel:write(inno.nodes[i] .. "\n")
+  end
 
+  file:write("\n")
 
+  file:write(#gen.species)
+  for i = 1,#gen.species do
+    file:write(i .. "\n")
+    file:write(gen.species[i].staleness)
+    file:write(gen.species[i].example)
+    
+    local genomes = gen.species[i].genomes
+    file:write(#genomes)
+    for j = 1,#genomes do
+      file:write(genome.genes[i].I .. " ")
+      file:write(genome.genes[i].O .. " ")
+      file:write(genome.genes[i].weight .. " ")
+      if genome.genes[i].enable == true then
+        file:write("1 ")
+      else
+        file:write("0 ")
+      end
+      file:write(genome.genes[i].innovation .. "\n")
+    end
+    file:write("\n")
+  end
+        file:close()
 end
 
 
