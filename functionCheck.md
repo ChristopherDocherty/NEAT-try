@@ -3,6 +3,7 @@
   -makeGenome()
   -addlink()
     -randomNodes()
+      -Possibly in the networkO part an error?
       -getMaxDistance()
     -getInno()
   -speciate(//,false)
@@ -37,4 +38,4 @@
           -addLink()
     -makeGen()
     -speciate(//, true)
--initialiseRun
+-initialiseRun()

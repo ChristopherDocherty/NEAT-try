@@ -36,9 +36,6 @@ staleLim = 15
 BoxRadius = 6
 InputSize = (BoxRadius*2+1)*(BoxRadius*2+1)
 
-inputNum = InputSize+1
-outputNum = #ButtonNames
-
 
 
 -- in this exact order, inno.nodes(inputNum) till (inputNum+outputNum)
@@ -54,6 +51,10 @@ ButtonNames = {
 		"Left",
 		"Right",
 }
+
+inputNum = InputSize+1
+outputNum = #ButtonNames
+
 
 
 
@@ -197,10 +198,10 @@ function makeNode(genome,gene)
 
   local i = 1
 
-  while found = false & i <= #inno.nodes do
+  while found == false and i <= #inno.nodes do
 
 
-    if gene.I == inno.nodes[i].input & gene.O == inno.nodes[i].output then
+    if gene.I == inno.nodes[i].input and gene.O == inno.nodes[i].output then
       found = true
       nodeID = i
     end
@@ -308,7 +309,7 @@ function cauchyStep()
 
   local rng = (math.random() - 0.5) / 5
 
-  perturb = 1 / (math.pi * stepSize * (1 + (rng / stepSize)^2)
+  perturb = 1 / (math.pi * stepSize * (1 + (rng / stepSize)^2))
 
   return perturb
 
@@ -321,8 +322,8 @@ function getMaxDistance(node,genome)
 
   local outputList = genome.networkO
 
-  --Dealing with case of non ouputting node
-  if outputList[node] = nil then
+  --Dealing with case of input node
+  if outputList[node] == nil then
     return 0
   end
 
@@ -345,7 +346,7 @@ function getMaxDistance(node,genome)
 -- Have to make list of all nodes not checked
   while #currentTable ~= 0 do
 
-    if currentTable[#currentTable].nodes = nil then
+    if currentTable[#currentTable].nodes == nil then
       if currentTable[#currentTable].depth > maxD then
         maxD = currentTable[#currentTable].depth
       end
@@ -370,7 +371,6 @@ function getMaxDistance(node,genome)
   return maxD
 
 end
-
 
 function randomNodes(genome)
   --Always want 2 nodes out
@@ -410,47 +410,59 @@ function randomNodes(genome)
 
   --Finding if unique and regenerateing if not
   local unique = false
-  while unique = false do
+  while unique == false do
 
 
     local feedFor = false
 
-    while feedFor = false do
+    while feedFor == false do
       --giving random values
 
       --Need to use this loop so that an output node isn't chosen
       I = inputNum +1
-      while I >inputNum and I <= (inputNum + outputNum) do
-        I = inno.nodes[math.random(1,#inno.nodes)]
+
+
+      while I > inputNum and I <= (inputNum + outputNum) do
+        I = math.random(1,#inno.nodes) --This assignment change the type of I to table
       end
       --This is okay becasue only first inputNum'th entries are input nodes
-      O = inno.nodes[math.random(inputNum+1,#inno.nodes)]
+      O = math.random(inputNum+1,#inno.nodes)
 
+			console.writeline(I)
+			console.writeline(O)
+			console.writeline(getMaxDistance(I,genome))
+			console.writeline(getMaxDistance(O,genome))
       feedFor = getMaxDistance(I,genome) < getMaxDistance(O,genome)
     end
+
 
 
     --Search for gene, can probably imrpove in light of list but will come back
     local found = false
     local i = 1
-    while found = false & i < #genome.genes do
+    while found == false and i < #genome.genes do
 
-      if I == geneList.I & O == geneList.O then
+      if I == geneList.I and O == geneList.O then
         found = true
       end
-
+console.writeline("1")
       i = i + 1
 
     end
 
     if found == false then
       unique = true
+			console.writeline("2")
     end
+
+		local socket = require 'socket'
+socket.sleep(0.2)
   end
 
   return {I,O}
 
 end
+
 
 --For getting the innovation of genes
 function getInno(I,O)
@@ -459,9 +471,9 @@ function getInno(I,O)
   local found = false
   local i = 1
 
-  while found = false & i <= #inno.genes do
+  while found == false and i <= #inno.genes do
 
-    if gene.I == inno.genes[i].I & gene.O = inno.genes[i].O then
+    if gene.I == inno.genes[i].I and gene.O == inno.genes[i].O then
       found = true
     end
 
@@ -538,7 +550,7 @@ function alterWeight(genome)
 
   if rand <= mPerturb then
     for i = 1,#genome.genes do
-      gene[i].weight =gene.[i].weight + cauchyStep()
+      gene[i].weight =gene[i].weight + cauchyStep()
     end
   else
     gene[i].weight =  math.random()*4 -2
@@ -648,12 +660,12 @@ function speciesRank(species,speciesNum)
 
 
   --Saving good genomes
-  if #species.genomes >5 do
-    for i = 1 to 5 do
+  if #species.genomes > 5 then
+    for i = 1,5 do
       saveGenome(species.genomes[i],gen.number,speciesNum,i)
     end
   else
-    for i = 1,#species.genomes
+    for i = 1,#species.genomes do
     saveGenome(species.genomes[i],gen.number,speciesNum,i)
     end
   end
@@ -736,7 +748,7 @@ function killWeaklings()
 
     --Removes worst so many
     for j = 1, tempGenomeCount* propForDeath do
-      table.remove(gen.species.[i].genomes)
+      table.remove(gen.species[i].genomes)
     end
 
   end
@@ -864,7 +876,7 @@ function createPop()
    local nextGenSpecies = {}
 
 
-   for i = 1,#gen.species do
+  for i = 1,#gen.species do
     if gen.species[i].staleness < staleLim then
 
       gen.species[i].example = gen.species[i].genomes[math.random(1,#gen.species[i].genomes)]
@@ -875,6 +887,8 @@ function createPop()
 
 
    return children, nextGenSpecies
+
+ 	end
 
 end
 
@@ -989,19 +1003,19 @@ end
 function speciate(children,table)
 
 
-  if table = true then
+  if table == true then
     for i = 1,#children do
 
       local child = children[i]
       local found = false
       local count = 1
-      while count <= #gen.species & found == false do
+      while count <= #gen.species and found == false do
 
         found = sameSpecies(child,gen.species[count])
 
       end
 
-      if found = true then
+      if found == true then
         table.insert(child,gen.species[count])
       else
         local newSpecies = makeSpecies()
@@ -1018,13 +1032,13 @@ function speciate(children,table)
 
     local found = false
     local count = 1
-    while count <= #gen.species & found == false do
+    while count <= #gen.species and found == false do
 
       found = sameSpecies(children,gen.species[count])
 
     end
 
-    if found = true then
+    if found == true then
       table.insert(children,gen.species[count])
     else
       local newSpecies = makeSpecies()
@@ -1050,7 +1064,7 @@ function saveGenome(genome, generation, speciesNum, genomeNum)
   file:write(genome.globalRank .. "\n")
   file:write(#genome.genes .. "\n")
 
-  for i = 1 to #genome.genes do
+  for i = 1,#genome.genes do
 
     file:write(genome.genes[i].I .. " ")
     file:write(genome.genes[i].O .. " ")
@@ -1146,15 +1160,14 @@ function initialise()
 	inno.nodes if I or O is 0 then it is an I/O node, -1 indicate invalid
 	]]
 
-	for i = 1 to inputNum do
+	for i = 1,inputNum do
 	  local temp = {}
 	  temp.input = 0
 	  temp.output = -1
 	  table.insert(inno.nodes,temp)
 	end
 
-	for i = 1 to ouputNum do
-
+	for i = 1,outputNum do
 	  local temp = {}
 	  temp.input = -1
 	  temp.output = 0
@@ -1171,6 +1184,7 @@ function initialise()
     local genome = makeGenome()
 
     addLink(genome)
+		--CURRENTLY UP TO HERE IN RUNNING
     --Performing speciation for only one genome
     speciate(genome,false)
 
@@ -1318,7 +1332,7 @@ function evaluateNetwork(genome)
           outputSum[genesI[j].O] = outputSum[genesI[j].O] + sigmoid(outputSum[inputNodeNum]) * genesI.weight
           --IMPRTANT!!!! applying sigmoid here, should be okay but should still check
           --also add them to nextLayer if outputCheckRef = false
-          if outputCheckRef[genesI[j].O] = false then
+          if outputCheckRef[genesI[j].O] == false then
             outputCheckRef[genesI[j].O] = true
             table.insert(nextLayer,genesI[j].O)
           end
@@ -1338,7 +1352,7 @@ function evaluateNetwork(genome)
 
     --Add new layer
     --TO make sure condition is broken when only output nodes are given
-    if #nextLayer ~= 0
+    if #nextLayer ~= 0 then
       table.insert(currentLayer[1].nodes,NextLayer)
     end
   end
@@ -1374,6 +1388,7 @@ end
 --Start of actual code
 
 event.onexit(saveGen)
+
 
 initialise()
 
