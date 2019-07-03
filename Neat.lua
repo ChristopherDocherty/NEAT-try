@@ -176,34 +176,13 @@ inno.genes = {}
 --for genes use .I and .O
 inno.nodes = {}
 --fir ndoes use .input and .output
---[[
-As part of initialsiation I have to add the input and output nodes to
-inno.nodes if I or O is 0 then it is an I/O node
-]]
 
-for i = 1 to inputNum do
-  local temp = {}
-  temp.input = 0
-  temp.output = -1
-  table.insert(inno.nodes,temp)
-end
-
-for i = 1 to ouputNum do
-
-  local temp = {}
-  temp.input = -1
-  temp.output = 0
-  table.insert(inno.nodes, temp)
-end
 --[[
 I can't create an equivalent node for any I/O node so I make one of their
-attributes a negative number (obviously invalid). This allows me to put them in
-the table (so i can correctly choose random nodes) without potentially matching
-a new ndoe to it
+attributes a negative number (obviously invalid). This allows me to put them
+in the table (so i can correctly choose random nodes) without potentially
+matching a new ndoe to it
 ]]
-
-
-
 
 --^^ is necessary for checking if new innovation occurs
 --Store the connection I/O that the node disrupts in here
@@ -1162,6 +1141,27 @@ end
 
 
 function initialise()
+	--[[
+	As part of initialsiation I have to add the input and output nodes to
+	inno.nodes if I or O is 0 then it is an I/O node, -1 indicate invalid
+	]]
+
+	for i = 1 to inputNum do
+	  local temp = {}
+	  temp.input = 0
+	  temp.output = -1
+	  table.insert(inno.nodes,temp)
+	end
+
+	for i = 1 to ouputNum do
+
+	  local temp = {}
+	  temp.input = -1
+	  temp.output = 0
+	  table.insert(inno.nodes, temp)
+	end
+
+
   --Will start currents on 1
   gen = makeGen()
 
@@ -1170,7 +1170,7 @@ function initialise()
 
     local genome = makeGenome()
 
-    addlink(genome)
+    addLink(genome)
     --Performing speciation for only one genome
     speciate(genome,false)
 
@@ -1267,7 +1267,7 @@ actual entry is a table of the output neurons
 ]]
 
 
-function EvaluateNetwork(genome)
+function evaluateNetwork(genome)
 
   getNetworkI(genome)
 
@@ -1386,7 +1386,7 @@ while true do
 
 
   if pool.currentFrame%5 == 0 then
-		evaluateCurrent(genome)
+		evaluateNetwork(genome)
 	end
 
   joypad.set(controller)
