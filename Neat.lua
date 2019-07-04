@@ -1,7 +1,7 @@
 --[[Program containing Neat by itself without details of the fitness function or the
 necessary data ot actually runthe algorithm
 ]]
-
+test
 --Constants
 population =150
 genNum = 0
@@ -455,8 +455,7 @@ console.writeline("1")
 			console.writeline("2")
     end
 
-		local socket = require 'socket'
-socket.sleep(0.2)
+
   end
 
   return {I,O}

@@ -18,6 +18,10 @@
       -getInputs()
       -sigmoid()
 
+All works on first run through, not sure if definitely logically though.
+Good work anyway!
+
+
 -evaluateNetwork
 -getPositions()
 -fitnessMeasured()
