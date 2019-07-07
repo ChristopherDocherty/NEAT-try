@@ -1,5 +1,5 @@
 console.writeline("help!")
-
+console.writeline(1)
 
 --Constants
 population = 300
@@ -53,7 +53,7 @@ outputNum = #ButtonNames
 
 
 
-
+console.writeline(2)
 function clearJoypad()
 	controller = {}
 	for b = 1,#ButtonNames do
@@ -156,7 +156,7 @@ function getInputs()
 end
 
 --Data structures
-
+console.writeline(3)
 
 
 ---have to store I/O's in here
@@ -287,7 +287,7 @@ function makeGen()
 
 end
 
-
+console.writeline(4)
 
 function gaussStep()
 
@@ -343,7 +343,7 @@ function randomNodes(genome)
   return I,O
 
 end
-
+console.writeline(6)
 
 --For getting the innovation of genes
 function getInno(I,O)
@@ -447,7 +447,7 @@ function alterWeight(genome)
 	end
 
 end
-
+console.writeline(7)
 --[[Implementation choice of whether multiple different types of mutatoin can
 or not. Here I have chosen only one kind of mutation because I don't know which
 is correct]]
@@ -1215,7 +1215,7 @@ end
 
 --event.onexit(saveGen)
 
-console.writeline("help!")
+console.writeline("help!4545")
 
 initialise()
 
@@ -1272,9 +1272,7 @@ while true do
   gen.frame = gen.frame + 1
 
 
-	gui.drawText(210,100,tostring(controller["P1 " .. ButtonNames[1]]) .. "\n" .. tostring(controller["P1 " .. ButtonNames[2]]) .. "\n" .. tostring(controller["P1 " .. ButtonNames[3]]) .. "\n" .. tostring(controller["P1 " .. ButtonNames[4]]) .. "\n" ..
-	tostring(controller["P1 " .. ButtonNames[5]]) .. "\n" ..
-	tostring(controller["P1 " .. ButtonNames[6]]) .. "\n" ..
+	gui.drawText(210,100,tostring(controller["P1 " .. ButtonNames[1]]) .. "\n" .. tostring(controller["P1 " .. ButtonNames[2]]) .. "\n" .. tostring(controller["P1 " .. ButtonNames[3]]) .. "\n" .. tostring(controller["P1 " .. ButtonNames[4]]) .. "\n" .. tostring(controller["P1 " .. ButtonNames[5]]) .. "\n" .. tostring(controller["P1 " .. ButtonNames[6]]) .. "\n" ..
 	tostring(controller["P1 " .. ButtonNames[7]]) .. "\n" ..
 	tostring(controller["P1 " .. ButtonNames[8]]))
 
