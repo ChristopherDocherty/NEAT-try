@@ -161,7 +161,7 @@ inno = {}
 inno.genes = {}
 --for genes use .I and .O
 inno.nodes = {}
---fir ndoes use .input and .output
+--for ndoes use .input and .output
 
 --[[
 I can't create an equivalent node for any I/O node so I make one of their
@@ -184,35 +184,25 @@ function makeNode(genome,gene)
   local i = 1
 
   while found == false and i <= #inno.nodes do
-
     if gene.I == inno.nodes[i].input and gene.O == inno.nodes[i].output then
       found = true
       nodeID = i
     end
-
     i = i + 1
   end
 
   if found == false then
-    local temp = {}
-    temp.input = gene.I
-    temp.output = gene.O
+    local tempTable = {}
+    tempTable.input = gene.I
+    tempTable.output = gene.O
 
-    table.insert(inno.nodes,temp)--IMPORTANT for format of data in table
+    table.insert(inno.nodes,temp)
     nodeID = #inno.nodes
   end
 
-
-
-
-
-
   return nodeID
-
 --[[on creation, nodes have a unique I/O identifier, so if that is stored on
 creation (i.e. in this function) then identical nodes can identified]]
-  --Use for loop to search inno structure
-  --All connectoin genes aer uniquely identified by I/O as innovation depends on it entirely
 end
 
 
@@ -332,7 +322,7 @@ function randomNodes(genome)
 			end
 		end
 
-    --Search for gene, can probably imrpove in light of list but will come back
+
     local found = false
     local i = 1
     while found == false and i < #genome.genes do
@@ -360,11 +350,9 @@ function getInno(I,O)
   local i = 1
 
   while found == false and i <= #inno.genes do
-
     if I == inno.genes[i].I and O == inno.genes[i].O then
       found = true
     end
-
     i = i + 1
   end
 
@@ -414,13 +402,20 @@ local selected = 0
 
 	disruptGene = genome.genes[selected]
 
-  newNode = makeNode(genome, disruptGene)
+	local actuallyNew = false
+
+	while actuallyNew = false do
+		 newNode = makeNode(genome, disruptGene)
+		 if genome.nodes[newNode] == nil then
+			 actuallyNew = true
+			 genome.nodes[newNode] = 0
+		 end
+	end
 
   addGene1.I = disruptGene.I
   addGene1.O = newNode
   addGene1.weight = 1
-  addGene1.innovation = getInno(addGene1.I ,addGene1.O)
-
+  addGene1.innovation = getInno(addGene1.I,addGene1.O)
 
   addGene2.I = newNode
   addGene2.O = disruptGene.O
