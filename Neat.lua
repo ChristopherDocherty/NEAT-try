@@ -1,15 +1,15 @@
 --[[Program containing Neat by itself without details of the fitness function or the
 necessary data ot actually runthe algorithm
 ]]
-test
+--1-1-113
 --Constants
-population =150
+population = 300
 genNum = 0
 nodeNum = 0
 innovation = 0
-stepSize = 0.01 --From NEAT paper
+stepSize = 1 --From NEAT paper
 propForDeath = 0.5
-TimeoutConstant = 20 --For genomes that are stuck
+TimeoutConstant = 20--For genomes that are stuck
 
 --Mutation Constants
 mChance = 0.25
@@ -29,7 +29,7 @@ c1 = 1
 c2 = 1
 c3 = 0.4
 deltaT = 3
-staleLim = 15
+staleLim = 30
 
 
 --Copied parts
@@ -54,7 +54,6 @@ ButtonNames = {
 
 inputNum = InputSize+1
 outputNum = #ButtonNames
-
 
 
 
@@ -197,7 +196,7 @@ function makeNode(genome,gene)
   local nodeID = 0
 
   local i = 1
-
+	console.writeline("-1-")
   while found == false and i <= #inno.nodes do
 
 
@@ -213,7 +212,7 @@ function makeNode(genome,gene)
     local temp = {}
     temp.input = gene.I
     temp.output = gene.O
-
+		console.writeline("-2-")
     table.insert(inno.nodes,temp)--IMPORTANT for format of data in table
     nodeID = #inno.nodes
   end
@@ -267,13 +266,13 @@ end
 function makeSpecies()
 
 
-  local species
+  local species = {}
 
   species.genomes = {}
   species.meanF = 0
   species.maxF = 0
-  species.propTOkill = 0
-  species.numTOkill = 0
+  species.proptobreed = 0
+  species.numTObreed = 0
   species.staleness = 0
   species.example = {}
   species.elite = {}
@@ -305,12 +304,11 @@ end
 
 
 
-function cauchyStep()
+function gaussStep()
 
-  local rng = (math.random() - 0.5) / 5
+  local rng = (math.random() - 0.5) * 7
 
-  perturb = 1 / (math.pi * stepSize * (1 + (rng / stepSize)^2))
-
+  perturb = 1/(stepSize * math.sqrt(2 * math.pi)) * math.exp(-(rng^(2)/(2*stepSize^(2))))
   return perturb
 
 end
@@ -322,19 +320,27 @@ function getMaxDistance(node,genome)
 
   local outputList = genome.networkO
 
+	--This is accounting for output node case which would otherwise return 0
+	--on first run
+	if  node > inputNum and node <= (inputNum + outputNum) then
+		return 10000
+	end
+
   --Dealing with case of input node
   if outputList[node] == nil then
     return 0
   end
 
-
+--[[Need to completely overhaul this, the list of nodes needs to be added to
+currenTable.nodes]]
   local currentTable = {}
-  currentTable.nodes = {}
-  currentTable.depth = 0
-
+	local tempTable = {}
+	tempTable.nodes = {}
+  tempTable.depth = 0
   --Initialisation
-  table.insert(currentTable[1].nodes,outputList[node])
-  currentTable[1].depth = 1
+  table.insert(tempTable.nodes,outputList[node])
+  tempTable.depth = 1
+	table.insert(currentTable,tempTable)
 
 
   local maxD = 0
@@ -346,25 +352,24 @@ function getMaxDistance(node,genome)
 -- Have to make list of all nodes not checked
   while #currentTable ~= 0 do
 
-    if currentTable[#currentTable].nodes == nil then
-      if currentTable[#currentTable].depth > maxD then
-        maxD = currentTable[#currentTable].depth
+    if #currentTable[1].nodes == 0 then
+      if currentTable[1].depth > maxD then
+        maxD = currentTable[1].depth
       end
-      table.remove(currentTable)
+      table.remove(currentTable,1)
     else
 
-      local tableLen = #currentTable
-      for i = 1,#currentTable[tableLen].nodes do
-        local nodeAdd = currentTable[tableLen].nodes[i]
+      for i = 1,#currentTable[1].nodes do
+        local nodeAdd = currentTable[1].nodes[i]
 
-        table.insert(currentTable[#currentTable +1].nodes,outputList[nodeAdd])
-        currentTable[#currentTable +1].depth = currentTable[tableLen].depth +1
+				local insertTable = {}
+				insertTable.nodes = {}
+				insertTable.depth = currentTable[1].depth +1
+        table.insert(insertTable.nodes,outputList[nodeAdd])
+        table.insert(currentTable,insertTable)
 
       end
-
-      table.remove(currentTable,tableLen)
-
-
+      table.remove(currentTable,1)
     end
   end
 
@@ -383,24 +388,27 @@ function randomNodes(genome)
 
   local geneList = genome.genes
 
-
+	genome.networkO = {}
 
   --Making networkO solely for getMaxDistance
   --This prepares a list of all nodes with a list of all input to sed node
   for i = 1,#geneList do
     local Onode = geneList[i].O
     --going to have to save current list of outputs and then add new one
-    if genome.networkO[Onode] ~= nil then
-      local tempOlist = genome.network0[Onode]
-    else
-      local tempOlist = {}
-    end
+		local tempOlist = {}
 
+
+		--If there is no table inserted then this will suffice
+    if genome.networkO[Onode] ~= nil then
+  		tempOlist = genome.networkO[Onode]
+    end
     table.insert(tempOlist,geneList[i].I)
 
     --Remove and replace at position of output
-    table.remove(genome.networkO,Onode)
-    table.insert(genome.networkO,Onode,tempOlist)
+    genome.networkO[Onode] = nil
+
+    genome.networkO[Onode] = tempOlist
+
   end
 
 
@@ -428,10 +436,7 @@ function randomNodes(genome)
       --This is okay becasue only first inputNum'th entries are input nodes
       O = math.random(inputNum+1,#inno.nodes)
 
-			console.writeline(I)
-			console.writeline(O)
-			console.writeline(getMaxDistance(I,genome))
-			console.writeline(getMaxDistance(O,genome))
+
       feedFor = getMaxDistance(I,genome) < getMaxDistance(O,genome)
     end
 
@@ -445,20 +450,17 @@ function randomNodes(genome)
       if I == geneList.I and O == geneList.O then
         found = true
       end
-console.writeline("1")
       i = i + 1
-
     end
 
     if found == false then
       unique = true
-			console.writeline("2")
     end
 
 
   end
 
-  return {I,O}
+  return I,O
 
 end
 
@@ -469,21 +471,23 @@ function getInno(I,O)
 
   local found = false
   local i = 1
-
+	console.writeline("--1--")
   while found == false and i <= #inno.genes do
 
-    if gene.I == inno.genes[i].I and gene.O == inno.genes[i].O then
+    if I == inno.genes[i].I and O == inno.genes[i].O then
       found = true
     end
 
     i = i + 1
   end
 
+	console.writeline("--2--")
 --If not found then add to global list of innovations
   if found == false then
+		console.writeline("--2--")
     local temp = {}
-    temp.I = gene.I
-    temp.O = gene.O
+    temp.I = I
+    temp.O = O
     table.insert(inno.genes,temp)
     return #inno.genes
   else
@@ -504,7 +508,7 @@ function addLink(genome) --Need to determine if already existing
   --enabled by default
 
   linkGene.I, linkGene.O = randomNodes(genome)
-  linkGene.weight = math.random()*4 -2 --following sethbling [-2,2] range here
+  linkGene.weight = math.random()*4 - 2 --following sethbling [-2,2] range here
   linkGene.innovation = getInno(linkGene.I,linkGene.O)
 
   table.insert(genome.genes,linkGene)--check if this will stay global
@@ -516,9 +520,15 @@ function addNode(genome)
   local addGene1 = makeGene()
   local addGene2 = makeGene()
 
-  selected = math.random(1,#genome.genes)
-  disruptGene = genome.gene(selected)
+local selected = 0
+	local enabled = false
+	while enabled == false do
+		selected = math.random(1,#genome.genes)
+		enabled = genome.genes[selected].enable
+	end
 
+	disruptGene = genome.genes[selected]
+console.writeline("---1---")
   newNode = makeNode(genome, disruptGene)
 
   addGene1.I = disruptGene.I
@@ -526,16 +536,17 @@ function addNode(genome)
   addGene1.weight = 1
   addGene1.innovation = getInno(addGene1.I ,addGene1.O)
 
-
+console.writeline("---2---")
   addGene2.I = newNode
   addGene2.O = disruptGene.O
   addGene2.weight = disruptGene.weight
   addGene2.innovation = getInno(addGene2.I,addGene2.O)
 
+console.writeline("---3---")
   table.insert(genome.genes,addGene1)
   table.insert(genome.genes,addGene2)
-  genome.gene(selected).enable = false
-
+  genome.genes[selected].enable = false
+	console.writeline("---4---")
 end
 
 
@@ -547,13 +558,15 @@ function alterWeight(genome)
 
   local gene = genome.genes
 
-  if rand <= mPerturb then
-    for i = 1,#genome.genes do
-      gene[i].weight =gene[i].weight + cauchyStep()
-    end
-  else
-    gene[i].weight =  math.random()*4 -2
-  end
+	for i = 1,#genome.genes do
+		local rand = math.random()
+
+  	if rand <= mPerturb then
+      gene[i].weight =gene[i].weight + gaussStep()
+  	else
+    	gene[i].weight =  math.random()*4 -2
+  	end
+	end
 
 end
 
@@ -565,18 +578,15 @@ function mutate(genome)
  local rng = math.random()
 
  if rng < mWeight then
-
    alterWeight(genome)
-
  elseif rng < mWeight + mAddNode then
-
    addNode(genome)
-
+	 console.writeline("hello error?")
  elseif  rng < mWeight + mAddNode + mAddLink then
-
    addLink(genome)
  end
 
+return genome
 
 end
 
@@ -586,7 +596,6 @@ end
 function genRank()
 
   local forSort = {}
-  --local totalF = gen.totalF
 
   for i = 1,#gen.species do
 
@@ -598,19 +607,19 @@ function genRank()
     end
   end
 
-table.sort(forSort, function (a,b)
-  return(a.fitness > b.fitness)
+	table.sort(forSort, function (a,b)
+  	return(a.fitness > b.fitness)
 
-  end
-  )
+  	end
+  	)
 
---[[  for i = 1,#forSort do
+		for i = 1,#forSort do
+    	forSort[i].globalRank = i
+		end
 
-    forSort[i].globalRank = i
-    --Still pretty sure this works
-    totalF = totalF + forSort[i].fitness
-  end
- no idea why this is here]]
+
+
+
 end
 
 
@@ -636,15 +645,13 @@ function speciesRank(species,speciesNum)
 
   --For elitism purposes
   if #forSort >= 5 then
-
     table.insert(species.elite, forSort[1])
-
   end
 
   for i = 1,#forSort do
 
 --Definetly passes its value?
-    forSort.speciesRank[i] = i
+    forSort[i].speciesRank = i
 
   end
 
@@ -661,12 +668,10 @@ function speciesRank(species,speciesNum)
   --Saving good genomes
   if #species.genomes > 5 then
     for i = 1,5 do
-      saveGenome(species.genomes[i],gen.number,speciesNum,i)
+      saveGenome(forSort[i],gen.number,speciesNum,i)
     end
   else
-    for i = 1,#species.genomes do
-    saveGenome(species.genomes[i],gen.number,speciesNum,i)
-    end
+    saveGenome(forSort[1],gen.number,speciesNum,1)
   end
 end
 
@@ -680,13 +685,10 @@ function offspringAssign()
     for i = 1,#gen.species do
 
       forPropor = forPropor + gen.species[i].meanF
-
     end
 
-    for i = 1,#species do
-
-      gen.species[i].propTOkill = meanf / forPropor
-
+    for i = 1,#gen.species do
+      gen.species[i].proptobreed = gen.species[i].meanF / forPropor
     end
 
 
@@ -698,24 +700,25 @@ function SUS()
 
   local i = 1
   local a = 0
-  local r = math.random() * (1 / population)
   local wantChildNum = population - gen.eliteNum
+
   --TO make sure required number of children is found
   local overallChildNum = 0
   local speciesChildNum = 0
+	local r = math.random() * (1 / wantChildNum)
 
 
 --need to adjust for elitism DONE
-  while  overallChildNum <= wantChildNum do
+  while  overallChildNum < wantChildNum do
+
 
     --Accumulative probablity
-    a = a + gen.species[i].propTOkill
-
+    a = a + gen.species[i].proptobreed
     --Resetting to take from top each time
     speciesChildNum = 0
     while r <= a do
 
-      r = r +(1 / childNum)
+      r = r +(1 / wantChildNum)
       speciesChildNum = speciesChildNum +1
 
 
@@ -724,13 +727,12 @@ function SUS()
     end
 
     --Saving number of children for each species
-    gen.species[i].numTOkill = speciesChildNum
+    gen.species[i].numTObreed = speciesChildNum
 
     i = i + 1
 
 
   end
-
 end
 
 function killWeaklings()
@@ -744,9 +746,8 @@ function killWeaklings()
     end
     )
     tempGenomeCount = #gen.species[i].genomes
-
     --Removes worst so many
-    for j = 1, tempGenomeCount* propForDeath do
+    for j = 1, tempGenomeCount * propForDeath do
       table.remove(gen.species[i].genomes)
     end
 
@@ -790,9 +791,9 @@ function recombine(g1,g2)
         table.insert(child.genes,gene1)
       end
 
-      return child
 
     end
+		return child
 
   else
     --If not from recombination just copy fitter individual
@@ -816,24 +817,32 @@ function breed()
 
   for i = 1,#species do
 
-    for i = 1,species[i].numTOkill do
+    for j = 1,species[i].numTObreed do
 
       local genomeCnt = #species[i].genomes
 
-      g1 = species[i].genomes[math.random(genomeCnt)]
-      g2 = species[i].genomes[math.random(genomeCnt)]
+      g1 = species[i].genomes[math.random(1,genomeCnt)]
+      g2 = species[i].genomes[math.random(1,genomeCnt)]
 
       local child = recombine(g1,g2)
-
+				--[[if species[i].meanF > 500 then
+				console.writeline(g1)
+				console.writeline(g2)
+				console.writeline(child)
+			end
       child = mutate(child)
+			if species[i].meanF > 500 then
+				console.writeline(child)
+			end]]
 
+
+			child = mutate(child)
+			console.writeline("i like lag")
       table.insert(bred,child)
-
     end
 
   end
-
-
+	console.writeline("nae way")
   return bred
 
 end
@@ -842,47 +851,54 @@ end
 function createPop()
 
   local childtemp = {}
-
-
+	local forElitisim = {}
 
   for i = 1,#gen.species do
     --Elitism
-    if species[i].elite ~= nil then
-      table.insert(childtemp,gen.species[i].elite)
+    if #gen.species[i].elite ~= 0 then
+			gen.species[i].elite[1].fitness = 0
+      table.insert(childtemp,gen.species[i].elite[1])
       table.remove(gen.species[i].elite)
       gen.eliteNum = gen.eliteNum +1
     end
-
+		for j = 1,#gen.species[i].genomes do
+			if gen.species[i].genomes[j].globalRank < 10 then
+				gen.species[i].genomes[j].fitness = 0
+				table.insert(childtemp,gen.species[i].genomes[j])
+			end
+		end
   end
 
 
   --Making babies
-
   --Needed number of elite for this function
    SUS()
 
    killWeaklings()
    --meaning sort and remove bottom so many
 
+	 --WORKS TO HERE!!!!
    children = breed()
-
    --Adding the elite members into the children
    for i = 1,#childtemp do
      table.insert(children,childtemp[i])
    end
 
-
    local nextGenSpecies = {}
-
 
   for i = 1,#gen.species do
     if gen.species[i].staleness < staleLim then
+			--Need to remove old genomes...
+			local getLostNum = #gen.species[i].genomes
+			for j = 1,getLostNum do
+				table.remove(gen.species[i].genomes)
+			end
 
-      gen.species[i].example = gen.species[i].genomes[math.random(1,#gen.species[i].genomes)]
       table.insert(nextGenSpecies,gen.species[i])
 
     end
    --save one genome in examples but remove all the rest
+
 
 
    return children, nextGenSpecies
@@ -896,7 +912,7 @@ end
 --the i'th gene is disjoint
 function sameSpecies(genome1,species)
 
-  --May be wrong to have this [1], also kind of redunandat to have best member and example...
+  --There is never an example...
   local genome2 = species.example[1]
 
   --Actually counting disjoint and excess
@@ -914,6 +930,8 @@ function sameSpecies(genome1,species)
   end
 
   local delta = c1 * dNum/N + c3 * avWdif
+	--EVEN when genome2 doesn't exist, dNum returns 2
+
 
   if delta < deltaT then
     return true
@@ -931,66 +949,55 @@ end
 function constantGet(genome1,genome2)
 
 
+
   local i1 = {}
+
   for i = 1,#genome1.genes do
-    local gene = genome1.gene[i]
-    local temptable = {}
-    --For disjoint
-    temptable.inno = true
-    --for weight
-    temptable.geneNum = i
-    table.insert(i1,temptable)
+    local gene = genome1.genes[i]
+		i1[gene.innovation] = i
   end
 
   local i2 = {}
   for i = 1,#genome2.genes do
-    local gene = genome2.gene[i]
-    local temptable = {}
-    --For disjoint
-    temptable.inno = true
-    --for weight
-    temptable.geneNum = i
-      table.insert(i2,temptable)
+    local gene = genome2.genes[i]
+		i2[gene.innovation] = i
   end
 
 
   local disjointNum = 0
   local totalWdif = 0
   local countW = 0
+	local avWdif = 0
 
   for i = 1,#genome1.genes do
-    local gene = genome1.gene[i]
+    local gene = genome1.genes[i]
     local num = gene.innovation
-    if  i2[num].inno then
-
+    if  i2[num] ~= nil then
       countW = countW + 1
       --Looks nasty but is just finding the right gene for difference in genome2
-      local wdif = math.abs((gene.weight - genome2.gene[i2[num].geneNum].weight))
-      totalWdif = totalWdif + wdif
+      local wdif = (gene.weight - genome2.genes[i2[num]].weight)
+      totalWdif = totalWdif + math.abs(wdif)
     else
       disjointNum = disjointNum +1
     end
   end
 
   for i = 1,#genome2.genes do
-    local gene = genome2.gene[i]
+    local gene = genome2.genes[i]
     local num = gene.innovation
-    if  i1[num].inno then
-
-      countW = countW + 1
-      --Looks nasty but is just finding the right gene for difference in genome2
-      local wdif = math.abs((gene.weight - genome2.gene[i2[num].geneNum].weight))
-      totalWdif = totalWdif + wdif
-    else
+    if i1[num] == nil then
+			--No need for weight difference as first loop carries this out
       disjointNum = disjointNum +1
     end
   end
 
-local avWdif = totalWdif / countW
+
+	if countW >0 then
+		avWdif = totalWdif / countW
+	end
 
 
-
-return disjointNum,avWdif
+	return disjointNum,avWdif
 
 
 
@@ -999,10 +1006,10 @@ end
 
 
 
-function speciate(children,table)
+function speciate(children,TorNot)
 
-
-  if table == true then
+--In this case the last entry of children is blank (or most probably the entry from elitism)
+  if TorNot == true then
     for i = 1,#children do
 
       local child = children[i]
@@ -1010,12 +1017,13 @@ function speciate(children,table)
       local count = 1
       while count <= #gen.species and found == false do
 
-        found = sameSpecies(child,gen.species[count])
-
+				found = sameSpecies(child,gen.species[count])
+				if not 	found then
+					count = count + 1
+				end
       end
-
       if found == true then
-        table.insert(child,gen.species[count])
+        table.insert(gen.species[count].genomes,child)
       else
         local newSpecies = makeSpecies()
         table.insert(newSpecies.genomes,child)
@@ -1023,7 +1031,6 @@ function speciate(children,table)
         table.insert(newSpecies.example,child)
         table.insert(gen.species,newSpecies)
       end
-
 
     end
   else
@@ -1033,15 +1040,19 @@ function speciate(children,table)
     local count = 1
     while count <= #gen.species and found == false do
 
-      found = sameSpecies(children,gen.species[count])
-
+			found = sameSpecies(children,gen.species[count])
+			if not 	found then
+				count = count + 1
+			end
     end
 
+
     if found == true then
-      table.insert(children,gen.species[count])
+		  table.insert(gen.species[count].genomes,children)
     else
       local newSpecies = makeSpecies()
-      table.insert(newSpecies,children)
+      table.insert(newSpecies.genomes,children)
+			table.insert(newSpecies.example,children)
       table.insert(gen.species,newSpecies)
     end
 
@@ -1059,7 +1070,7 @@ function saveGenome(genome, generation, speciesNum, genomeNum)
         local file = io.open(filename, "w")
   file:write(genome.fitness .. "\n")
   file:write(generation .. "\n")
-  file:write(species .. "\n")
+  file:write(speciesNum .. "\n")
   file:write(genome.globalRank .. "\n")
   file:write(#genome.genes .. "\n")
 
@@ -1143,7 +1154,7 @@ end
 function initialiseRun()
 	savestate.load(Filename);
 	rightmost = 0
-	gen.currentFrame = 0
+	gen.frame = 0
 	timeout = TimeoutConstant
 	clearJoypad()
 
@@ -1173,7 +1184,6 @@ function initialise()
 	  table.insert(inno.nodes, temp)
 	end
 
-
   --Will start currents on 1
   gen = makeGen()
 
@@ -1183,8 +1193,8 @@ function initialise()
     local genome = makeGenome()
 
     addLink(genome)
-		--CURRENTLY UP TO HERE IN RUNNING
     --Performing speciation for only one genome
+
     speciate(genome,false)
 
   end
@@ -1199,22 +1209,22 @@ end
 function nextGen()
 
   genRank()
+--around here
 
-  --Probably inefficient method
+	--Probably inefficient method
   for i =1,#gen.species do
     --Species ranking and summation of
     --Also storing fittest idnividual's data
     speciesRank(gen.species[i],i)
   end
 
-
-  offspringAssign()
+	offspringAssign()
 
 
   children, nextGenSpecies = createPop()
 
-
   gen = makeGen()
+
   for i = 1,#nextGenSpecies do
     table.insert(gen.species,nextGenSpecies[i])
   end
@@ -1222,7 +1232,24 @@ function nextGen()
 
   speciate(children,true)
 
+	--Have to ensure that dead species are removed!
+
+	local index = 1
+	local specCount = #gen.species
+	while index < specCount do
+		if #gen.species[index].genomes == 0 then
+			table.remove(gen.species,index)
+			index = 1
+			specCount = #gen.species
+		end
+		index = index + 1
+	end
+
+
 end
+
+
+
 
 --For neural net
 
@@ -1231,33 +1258,37 @@ function getNetworkI(genome)
 
   local geneList = genome.genes
 
-
+	saveing = {}
+	local tempIlist = {}
   --Going to save into networkI on genome
+
+	--Have to reset the network so as to not carry on past uses
+	genome.networkI = {}
 
   --This prepares a list of all nodes with a list of all genes from sed node
   for i = 1,#geneList do
-    local Inode = geneList[i].I
-    --going to have to save current list of genes and then add new one
-    if genome.networkI[Inode] ~= nil then
-      local tempIlist = genome.networkI[Inode]
-    else
-      local tempIlist = {}
-    end
+		if geneList[i].enable == true then
+			local Inode = geneList[i].I
+    	--going to have to save current list of genes and then add new one
+    	if genome.networkI[Inode] ~= nil then
+      	tempIlist = genome.networkI[Inode]
+    	end
 
-    table.insert(tempIlist,geneList[i])
+    	table.insert(tempIlist,geneList[i])
+    	--Remove and replace at position of output
+    	genome.networkI[Inode] = nil
+    	genome.networkI[Inode] = tempIlist
 
-    --Remove and replace at position of output
-    table.remove(genome.networkI,Inode)
-    table.insert(genome.networkI,Inode,tempIlist)
+			table.insert(saveing,Inode)
+		end
   end
-
-
 end
 
 function sigmoid(x)
 
   local result = 1/ (1+math.exp(-4.9*x))
-  return result
+
+	return result
 
 end
 
@@ -1279,21 +1310,35 @@ The structure of networkI is that the index represents the neuron and the
 actual entry is a table of the output neurons
 ]]
 
-
+--THIs FUNCITON ISN'T WORKING CORRECTLY!!!
 function evaluateNetwork(genome)
 
   getNetworkI(genome)
-
-
+--Confident this works as intended!!!!!!!!!!!
   local currentLayer = {}
-  currentLayer.nodes = {}
+	--[[not exactly sure if Im going to change this but currently it is
+	working out that i have to index currentlayer twice to get to the gene.
+	Not exactly a problem just looks bad :L]]
   local net = genome.networkI
 
-
+--[[	for i = 1,#saveing do
+		if gen.frame%10 == 0 then
+			for j = 1,#net[saveing[i]] --do
+		--		console.writeline(net[saveing[i]][j])
+		--[[		console.writeline("gap")
+			end
+		end
+	end
+]]
   --Getting input values to start Evaluation
   local inputs = getInputs()
   --^This is an inputNum size table with the value {-1,0,1} fo reach node^
 
+	--This is the "always on" node
+	inputs[#inputs + 1] = 1
+
+
+	--HASH TABLES
   local outputSum = {}
   local outputCheckRef = {}
 
@@ -1307,53 +1352,78 @@ function evaluateNetwork(genome)
       --After having done the above, the first neurons output will be recorded in outputSum. (outputCheckRef also updated)
     end
   end
-  table.insert(currentLayer[1].nodes,tempTable)
+  table.insert(currentLayer,tempTable)
 --These inital inputs will be 1 if standable block, -1 if enemy and 0 if nothing
 
 --Creating a condition that, while there is anything in current layer, will repeat
-  while currentLayer[1].nodes ~= nil do
+
+  while #currentLayer ~= 0 do
+
 
     --Temporary table to store next layer in
     local nextLayer = {}
 
     --iterate over all input nodes in this layer
-    for i = 1,#currentLayer[1].nodes do
+    for i = 1,#currentLayer do
 
-      --So inputNodeNum is just the number of a node
-      local inputNodeNum = currentLayer[1].nodes[i]
+			--ProbabLY NEED TO ADD ANOTHER FOR LOOP TO ITERATE over multiple nodes!!
 
-      --Making sure not a terminal node
-      if #net[inputNodeNum] ~= 0 then
-        --iterate over all output nodes for this node
-        local genesI = net[inputNodeNum]
-        for j = 1,#genesI do
-          --add to their sum, index i is meaning the current input node
-          outputSum[genesI[j].O] = outputSum[genesI[j].O] + sigmoid(outputSum[inputNodeNum]) * genesI.weight
-          --IMPRTANT!!!! applying sigmoid here, should be okay but should still check
+			for k = 1,#currentLayer[i] do
+      	--So inputNodeNum is just the number of a node
+      	local inputNodeNum = currentLayer[i][k]
+
+
+      	--Making sure not a terminal node
+      	if net[inputNodeNum] ~= nil then
+        	--iterate over all output nodes for this node
+        	local genesI = net[inputNodeNum]
+
+        	for j = 1,#genesI do
+          --[[There may not necessarily be anything in outputsum yet so Have
+					to make if statement]]
+						if outputSum[genesI[j].O] == nil then
+          		outputSum[genesI[j].O] = outputSum[inputNodeNum] * genesI[j].weight
+						else
+							outputSum[genesI[j].O] = outputSum[genesI[j].O] + outputSum[inputNodeNum] * genesI[j].weight
+						end
           --also add them to nextLayer if outputCheckRef = false
-          if outputCheckRef[genesI[j].O] == false then
-            outputCheckRef[genesI[j].O] = true
-            table.insert(nextLayer,genesI[j].O)
-          end
-        end
+					--This is currently successfully updating
+          	if outputCheckRef[genesI[j].O] == false or 	outputCheckRef[genesI[j].O] == nil then
+            	outputCheckRef[genesI[j].O] = true
+            	table.insert(nextLayer,genesI[j].O)
+          	end
+        	end
 
-      else
-        if sigmoid(outputSum[inputNodeNum]) > 0.5 then
+					--[[this ensures all sum's are ran through the sigmoid function]]
+					for j = 1,#genesI do
+						--Think this is necessary so that sigmoid doesn;t make something out of 0 values
+							if outputSum[genesI[j].O] ~= 0 then
+								outputSum[genesI[j].O] = sigmoid(outputSum[genesI[j].O])
+							end
+					end
+      	else
+					--sigmoid already applied
+        	if outputSum[inputNodeNum] > 0.5 then
           --do inputNodeNum - #inputs to give an index for controller table
+					if ButtonNames[inputNodeNum-#inputs] == nil then
+						console.writeline(inputNodeNum)
+						saveGenome(genome,5000,5000,50000)
+					end
 
-		      controller["P1 " .. ButtonNames[inputNodeNum-#inputs]] = true
-        end
-      end
-    end
-
+		      	controller["P1 " .. ButtonNames[inputNodeNum-#inputs]] = true
+        	end
+      	end
+    	end
+		end
     --Remove current layer
-      table.remove(currentLayer[1].nodes)
+      table.remove(currentLayer)
 
     --Add new layer
     --TO make sure condition is broken when only output nodes are given
-    if #nextLayer ~= 0 then
-      table.insert(currentLayer[1].nodes,NextLayer)
+		if #nextLayer ~= 0 then
+      table.insert(currentLayer,nextLayer)
     end
+
   end
 end
 
@@ -1363,12 +1433,15 @@ end
 function nextGenome()
 
   gen.currentGenome = gen.currentGenome + 1
-  if gen.currentGenome > #gen.species[currentSpecies].genomes then
+
+	--Returning nil becasue i have removed all of the species
+  if gen.currentGenome > #gen.species[gen.currentSpecies].genomes then
     gen.currentSpecies = gen.currentSpecies + 1
     gen.currentGenome = 1
   end
   if gen.currentSpecies > #gen.species then
     nextGen()
+		gen.currentGenome = 1
     gen.currentSpecies = 1
   end
 
@@ -1376,8 +1449,9 @@ end
 
 function fitnessMeasured()
 
+	--Error: unable to index s because all species have been destroyed
   local s = gen.species[gen.currentSpecies]
-  local g = species.genomes[gen.currentGenome]
+  local g = s.genomes[gen.currentGenome]
 
   return g.fitness ~= 0
 
@@ -1386,20 +1460,21 @@ end
 
 --Start of actual code
 
-event.onexit(saveGen)
-
+--event.onexit(saveGen)
 
 initialise()
 
+counter = 0
 
 
-while true do
-
-  species = gen.species[gen.currentSpecies]
-  genome = species.genomes[gen.currentGenome]
+while true  do
 
 
-  if pool.currentFrame%5 == 0 then
+	species = gen.species[gen.currentSpecies]
+	genome = species.genomes[gen.currentGenome]
+
+
+	if gen.frame%5 == 0 then
 		evaluateNetwork(genome)
 	end
 
@@ -1419,13 +1494,12 @@ while true do
   gui.drawText(0,0,"Fitness:" .. tostring(fitness))
 
 
-  local timeoutBonus = pool.currentFrame / 4
+  local timeoutBonus = gen.frame / 4
 	if timeout + timeoutBonus <= 0 then
 		 fitness = rightmost - gen.frame / 2
 		if rightmost > 4816 then
 			fitness = fitness + 1000
 		end
-
     --to get rid of species with awful fitness
 		if fitness == 0 then
 			fitness = -1
@@ -1435,8 +1509,8 @@ while true do
 		console.writeline("Gen " .. gen.number .. " species " .. gen.currentSpecies .. " genome " .. gen.currentGenome .. " fitness: " .. fitness)
 
 
-    pool.currentSpecies = 1
-		pool.currentGenome = 1
+    gen.currentSpecies = 1
+		gen.currentGenome = 1
 		while fitnessMeasured()  do
 			nextGenome()
 		end
@@ -1445,6 +1519,59 @@ while true do
 
   gen.frame = gen.frame + 1
 
-  emu.frameAdvance()
+
+	gui.drawText(210,100,tostring(controller["P1 " .. ButtonNames[1]]) .. "\n" .. tostring(controller["P1 " .. ButtonNames[2]]) .. "\n" .. tostring(controller["P1 " .. ButtonNames[3]]) .. "\n" .. tostring(controller["P1 " .. ButtonNames[4]]) .. "\n" ..
+	tostring(controller["P1 " .. ButtonNames[5]]) .. "\n" ..
+	tostring(controller["P1 " .. ButtonNames[6]]) .. "\n" ..
+	tostring(controller["P1 " .. ButtonNames[7]]) .. "\n" ..
+	tostring(controller["P1 " .. ButtonNames[8]]))
+
+
+
+	local needThese = getInputs()
+
+	local cells = {}
+	local i = 1
+	local cell = {}
+	for dy=-BoxRadius,BoxRadius do
+		for dx=-BoxRadius,BoxRadius do
+			cell = {}
+			cell.x = 50+5*dx
+			cell.y = 70+5*dy
+			cell.value = needThese[i] --HVYFEVBEB
+			cells[i] = cell
+			i = i + 1
+		end
+	end
+
+	local biasCell = {}
+	biasCell.x = 80
+	biasCell.y = 110
+	biasCell.value = 1
+	cells[inputNum + 1] = biasCell
+
+
+
+
+
+	gui.drawBox(50-BoxRadius*5-3,70-BoxRadius*5-	3,50+BoxRadius*5+2,70+BoxRadius*5+2,0xFF000000, 0x80808080)
+	for n,cell in pairs(cells) do
+		if n > inputNum or cell.value ~= 0 then
+			local color = math.floor((cell.value+1)/2*256)
+			if color > 255 then color = 255 end
+			if color < 0 then color = 0 end
+			local opacity = 0xFF000000
+			if cell.value == 0 then
+				opacity = 0x50000000
+			end
+			color = opacity + color*0x10000 + color*0x100 + color
+			gui.drawBox(cell.x-2,cell.y-2,cell.x+2,cell.y+2,opacity,color)
+		end
+	end
+
+	emu.frameadvance()
+
+
+
 
 end
