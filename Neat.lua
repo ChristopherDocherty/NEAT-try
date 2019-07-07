@@ -1,3 +1,6 @@
+console.writeline("help!")
+
+
 --Constants
 population = 300
 genNum = 0
@@ -201,7 +204,7 @@ function makeNode(genome,gene)
   end
 
   return nodeID
---[[on creation, nodes have a unique I/O identifier, so if that is stored on
+	--[[on creation, nodes have a unique I/O identifier, so if that is stored on
 creation (i.e. in this function) then identical nodes can identified]]
 end
 
@@ -308,7 +311,7 @@ function randomNodes(genome)
 
 		--Have to ensure the chosen node is present in genome
 		local present = false
-		while present = false do
+		while present == false do
     	--Initialisation for loop
     	O = outputNum +1
 
@@ -404,7 +407,7 @@ local selected = 0
 
 	local actuallyNew = false
 
-	while actuallyNew = false do
+	while actuallyNew == false do
 		 newNode = makeNode(genome, disruptGene)
 		 if genome.nodes[newNode] == nil then
 			 actuallyNew = true
@@ -660,9 +663,9 @@ function recombine(g1,g2)
     end
 		return child
 
-  else
-    --If not from recombination just copy fitter individual
-    child.genes = g1.genes
+  	else
+    	--If not from recombination just copy fitter individual
+    	child.genes = g1.genes
 
     return child
   end
@@ -998,6 +1001,7 @@ function initialiseRun()
 	timeout = TimeoutConstant
 	clearJoypad()
 
+	--[[
 	--This is done so that no values from a previous run are carried over
 	for i = 1,outputNum do
 		genome.nodes[i] = 0
@@ -1010,11 +1014,12 @@ function initialiseRun()
 
 	local species = gen.species[gen.currentSpecies]
 	local genome = species.genomes[gen.currentGenome]
-	evaluateNetwork(genome)
+	evaluateNetwork(genome)]]
 end
 
 
 function initialise()
+	console.writeline("test")
 	--[[
 	As part of initialsiation I have to add the input and output nodes to
 	inno.nodes if I or O is 0 then it is an I/O node, -1 indicate invalid
@@ -1024,7 +1029,7 @@ function initialise()
 		local temp = {}
 		temp.input = -1
 		temp.output = 0
-		table.insert(inno.nodes, temp)
+		table.insert(inno.nodes,temp)
 	end
 
 	for i = 1,inputNum do
@@ -1037,7 +1042,6 @@ function initialise()
 
   --Will reset currents on 1
   gen = makeGen()
-
   --Speciate on the fly
   for i = 1,population do
 
@@ -1120,7 +1124,7 @@ function getNetwork(genome)
 		temptable.node = i
 		temptable.inputGenes = {}
 		for j = 1,#genome.genes do
-			if genome.genes[j].O = i then
+			if genome.genes[j].O == i then
 				table.insert(temptable.input,genome.genes[j])
 			end
 		end
@@ -1134,7 +1138,7 @@ function getNetwork(genome)
 			temptable.node = i
 			temptable.inputGenes = {}
 			for j = 1,#genome.genes do
-				if genome.genes[j].O = i then
+				if genome.genes[j].O == i then
 					table.insert(temptable.inputGenes,genome.genes[j])
 				end
 			end
@@ -1210,6 +1214,8 @@ end
 --Start of actual code
 
 --event.onexit(saveGen)
+
+console.writeline("help!")
 
 initialise()
 
@@ -1317,9 +1323,5 @@ while true do
 		end
 	end
 
-	emu.frameadvance()
-
-
-
-
+	emu.frameadvance();
 end
