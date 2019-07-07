@@ -1,7 +1,3 @@
---[[Program containing Neat by itself without details of the fitness function or the
-necessary data ot actually runthe algorithm
-]]
---1-1-113
 --Constants
 population = 300
 genNum = 0
@@ -36,9 +32,6 @@ staleLim = 30
 BoxRadius = 6
 InputSize = (BoxRadius*2+1)*(BoxRadius*2+1)
 
-
-
--- in this exact order, inno.nodes(inputNum) till (inputNum+outputNum)
 --correspond to these buttons
 Filename = "YI2.state"
 ButtonNames = {
@@ -66,8 +59,6 @@ function clearJoypad()
 	joypad.set(controller)
 end
 
-
-
 --Assigns globally
 function getPositions()
 
@@ -89,7 +80,6 @@ function getTile(dx, dy)
 
 		return memory.readbyte(0x1C800 + math.floor(x/0x10)*0x1B0 + y*0x10 + x%0x10)
 end
-
 
 
 function getSprites()
@@ -162,10 +152,6 @@ function getInputs()
 	return inputs
 end
 
-
-
-
-
 --Data structures
 
 
@@ -196,9 +182,8 @@ function makeNode(genome,gene)
   local nodeID = 0
 
   local i = 1
-	console.writeline("-1-")
-  while found == false and i <= #inno.nodes do
 
+  while found == false and i <= #inno.nodes do
 
     if gene.I == inno.nodes[i].input and gene.O == inno.nodes[i].output then
       found = true
@@ -212,10 +197,15 @@ function makeNode(genome,gene)
     local temp = {}
     temp.input = gene.I
     temp.output = gene.O
-		console.writeline("-2-")
+
     table.insert(inno.nodes,temp)--IMPORTANT for format of data in table
     nodeID = #inno.nodes
   end
+
+
+
+
+
 
   return nodeID
 
@@ -252,11 +242,14 @@ function makeGenome()
   genome.speciesRank = 0
   genome.globalRank = 0
   genome.fitness = 0
-  genome.nodeNum = 0
-  --Use this one for making the neural network
-  genome.networkI = {}
-  --Use this one for getting distance of node
-  genome.networkO = {}
+	--By making .nodes a hash table, nodes are uniform across all genomes
+	--Changing from before to have output nodes stored first
+  genome.nodes = {}
+	--This can be used to create a list table from the .nodes hash table
+	genome.mostNode = inputNum + outputNum
+	--[[This will hold the list table created from .nodes with node index and
+	value contained within]]
+	genome.network = {}
 
   return genome
 
@@ -290,7 +283,6 @@ function makeGen()
   gen.number = genNum
   gen.species = {}
   gen.maxFitness = 0
-  --gen.totalF = 0
   gen.eliteNum = 0
   --Added for keeping track fo what has been tested in main loop
   gen.currentGenome = 1
@@ -313,140 +305,37 @@ function gaussStep()
 
 end
 
---[[Have a feeling this may not be as computationally expensive as I thought so
-I'm going to try and implement it]]
-function getMaxDistance(node,genome)
-
-
-  local outputList = genome.networkO
-
-	--This is accounting for output node case which would otherwise return 0
-	--on first run
-	if  node > inputNum and node <= (inputNum + outputNum) then
-		return 10000
-	end
-
-  --Dealing with case of input node
-  if outputList[node] == nil then
-    return 0
-  end
-
---[[Need to completely overhaul this, the list of nodes needs to be added to
-currenTable.nodes]]
-  local currentTable = {}
-	local tempTable = {}
-	tempTable.nodes = {}
-  tempTable.depth = 0
-  --Initialisation
-  table.insert(tempTable.nodes,outputList[node])
-  tempTable.depth = 1
-	table.insert(currentTable,tempTable)
-
-
-  local maxD = 0
-
-
-  --[[I know how many connections there are as each gene is a connection
-  and that means that I can determine how many links to check]]
---Above not true so better condition required
--- Have to make list of all nodes not checked
-  while #currentTable ~= 0 do
-
-    if #currentTable[1].nodes == 0 then
-      if currentTable[1].depth > maxD then
-        maxD = currentTable[1].depth
-      end
-      table.remove(currentTable,1)
-    else
-
-      for i = 1,#currentTable[1].nodes do
-        local nodeAdd = currentTable[1].nodes[i]
-
-				local insertTable = {}
-				insertTable.nodes = {}
-				insertTable.depth = currentTable[1].depth +1
-        table.insert(insertTable.nodes,outputList[nodeAdd])
-        table.insert(currentTable,insertTable)
-
-      end
-      table.remove(currentTable,1)
-    end
-  end
-
-  return maxD
-
-end
 
 function randomNodes(genome)
   --Always want 2 nodes out
   --This function needs to get a unique (for the genome) pair of nodes
-  --Implementing feed forward network is a lot easier in here I think so I do it
-  --[[the maximum distance is the most important part here, if this is enforced
-  from the beginning then it makes sure that comparing maximum distance tells
-  us whether the new connection will be recurrent or not. It does reduce the
-  problem space but saves pruning]]
 
   local geneList = genome.genes
-
-	genome.networkO = {}
-
-  --Making networkO solely for getMaxDistance
-  --This prepares a list of all nodes with a list of all input to sed node
-  for i = 1,#geneList do
-    local Onode = geneList[i].O
-    --going to have to save current list of outputs and then add new one
-		local tempOlist = {}
-
-
-		--If there is no table inserted then this will suffice
-    if genome.networkO[Onode] ~= nil then
-  		tempOlist = genome.networkO[Onode]
-    end
-    table.insert(tempOlist,geneList[i].I)
-
-    --Remove and replace at position of output
-    genome.networkO[Onode] = nil
-
-    genome.networkO[Onode] = tempOlist
-
-  end
-
-
-
-
-
 
   --Finding if unique and regenerateing if not
   local unique = false
   while unique == false do
 
+		--Have to ensure the chosen node is present in genome
+		local present = false
+		while present = false do
+    	--Initialisation for loop
+    	O = outputNum +1
 
-    local feedFor = false
+    	while O > outputNum and O <= (inputNum + outputNum) do
+				O = math.random(1,#inno.nodes)
+    	end
+			I = math.random(outputNum+1,#inno.nodes)
 
-    while feedFor == false do
-      --giving random values
-
-      --Need to use this loop so that an output node isn't chosen
-      I = inputNum +1
-
-
-      while I > inputNum and I <= (inputNum + outputNum) do
-        I = math.random(1,#inno.nodes) --This assignment change the type of I to table
-      end
-      --This is okay becasue only first inputNum'th entries are input nodes
-      O = math.random(inputNum+1,#inno.nodes)
-
-
-      feedFor = getMaxDistance(I,genome) < getMaxDistance(O,genome)
-    end
-
-
+			if genome.nodes[O] ~= nil and genome.nodes[I] ~= nil then
+				present = true
+			end
+		end
 
     --Search for gene, can probably imrpove in light of list but will come back
     local found = false
     local i = 1
     while found == false and i < #genome.genes do
-
       if I == geneList.I and O == geneList.O then
         found = true
       end
@@ -456,8 +345,6 @@ function randomNodes(genome)
     if found == false then
       unique = true
     end
-
-
   end
 
   return I,O
@@ -471,7 +358,7 @@ function getInno(I,O)
 
   local found = false
   local i = 1
-	console.writeline("--1--")
+
   while found == false and i <= #inno.genes do
 
     if I == inno.genes[i].I and O == inno.genes[i].O then
@@ -481,10 +368,8 @@ function getInno(I,O)
     i = i + 1
   end
 
-	console.writeline("--2--")
 --If not found then add to global list of innovations
   if found == false then
-		console.writeline("--2--")
     local temp = {}
     temp.I = I
     temp.O = O
@@ -528,7 +413,7 @@ local selected = 0
 	end
 
 	disruptGene = genome.genes[selected]
-console.writeline("---1---")
+
   newNode = makeNode(genome, disruptGene)
 
   addGene1.I = disruptGene.I
@@ -536,23 +421,18 @@ console.writeline("---1---")
   addGene1.weight = 1
   addGene1.innovation = getInno(addGene1.I ,addGene1.O)
 
-console.writeline("---2---")
+
   addGene2.I = newNode
   addGene2.O = disruptGene.O
   addGene2.weight = disruptGene.weight
   addGene2.innovation = getInno(addGene2.I,addGene2.O)
 
-console.writeline("---3---")
+
   table.insert(genome.genes,addGene1)
   table.insert(genome.genes,addGene2)
   genome.genes[selected].enable = false
-	console.writeline("---4---")
+
 end
-
-
-
-
-
 
 function alterWeight(genome)
 
@@ -581,7 +461,6 @@ function mutate(genome)
    alterWeight(genome)
  elseif rng < mWeight + mAddNode then
    addNode(genome)
-	 console.writeline("hello error?")
  elseif  rng < mWeight + mAddNode + mAddLink then
    addLink(genome)
  end
@@ -616,15 +495,9 @@ function genRank()
 		for i = 1,#forSort do
     	forSort[i].globalRank = i
 		end
-
-
-
-
 end
 
 
---Make species rank also sum so it is quicker
---May need to change this function based on whether i parameter pass or not
 function speciesRank(species,speciesNum)
 
   local forSort = {}
@@ -650,7 +523,6 @@ function speciesRank(species,speciesNum)
 
   for i = 1,#forSort do
 
---Definetly passes its value?
     forSort[i].speciesRank = i
 
   end
@@ -790,15 +662,12 @@ function recombine(g1,g2)
       else
         table.insert(child.genes,gene1)
       end
-
-
     end
 		return child
 
   else
     --If not from recombination just copy fitter individual
     child.genes = g1.genes
-    child.nodeNum = g1.nodeNum
 
     return child
   end
@@ -825,26 +694,13 @@ function breed()
       g2 = species[i].genomes[math.random(1,genomeCnt)]
 
       local child = recombine(g1,g2)
-				--[[if species[i].meanF > 500 then
-				console.writeline(g1)
-				console.writeline(g2)
-				console.writeline(child)
-			end
-      child = mutate(child)
-			if species[i].meanF > 500 then
-				console.writeline(child)
-			end]]
-
 
 			child = mutate(child)
-			console.writeline("i like lag")
       table.insert(bred,child)
     end
 
   end
-	console.writeline("nae way")
   return bred
-
 end
 
 
@@ -948,8 +804,6 @@ end
 --Will almost certainly have to look this one over...
 function constantGet(genome1,genome2)
 
-
-
   local i1 = {}
 
   for i = 1,#genome1.genes do
@@ -998,17 +852,12 @@ function constantGet(genome1,genome2)
 
 
 	return disjointNum,avWdif
-
-
-
 end
-
 
 
 
 function speciate(children,TorNot)
 
---In this case the last entry of children is blank (or most probably the entry from elitism)
   if TorNot == true then
     for i = 1,#children do
 
@@ -1035,7 +884,6 @@ function speciate(children,TorNot)
     end
   else
 
-
     local found = false
     local count = 1
     while count <= #gen.species and found == false do
@@ -1055,9 +903,7 @@ function speciate(children,TorNot)
 			table.insert(newSpecies.example,children)
       table.insert(gen.species,newSpecies)
     end
-
   end
-
 end
 
 --File functions
@@ -1141,7 +987,6 @@ function saveGen()
 end
 
 
-
 --Initialisation
 function clearJoypad()
 	controller = {}
@@ -1158,6 +1003,16 @@ function initialiseRun()
 	timeout = TimeoutConstant
 	clearJoypad()
 
+	--This is done so that no values from a previous run are carried over
+	for i = 1,outputNum do
+		genome.nodes[i] = 0
+	end
+	for i = (inputNum + 1),genome.mostNode do
+		if genome.nodes[i] ~= nil then
+			genome.nodes[i] = 0
+		end
+	end
+
 	local species = gen.species[gen.currentSpecies]
 	local genome = species.genomes[gen.currentGenome]
 	evaluateNetwork(genome)
@@ -1170,21 +1025,22 @@ function initialise()
 	inno.nodes if I or O is 0 then it is an I/O node, -1 indicate invalid
 	]]
 
+	for i = 1,outputNum do
+		local temp = {}
+		temp.input = -1
+		temp.output = 0
+		table.insert(inno.nodes, temp)
+	end
+
 	for i = 1,inputNum do
 	  local temp = {}
 	  temp.input = 0
 	  temp.output = -1
 	  table.insert(inno.nodes,temp)
+
 	end
 
-	for i = 1,outputNum do
-	  local temp = {}
-	  temp.input = -1
-	  temp.output = 0
-	  table.insert(inno.nodes, temp)
-	end
-
-  --Will start currents on 1
+  --Will reset currents on 1
   gen = makeGen()
 
   --Speciate on the fly
@@ -1198,8 +1054,6 @@ function initialise()
     speciate(genome,false)
 
   end
-
-  clearJoypad()
 
   initialiseRun()
 
@@ -1253,37 +1107,6 @@ end
 
 --For neural net
 
---Saves a list of genes coming from each input
-function getNetworkI(genome)
-
-  local geneList = genome.genes
-
-	saveing = {}
-	local tempIlist = {}
-  --Going to save into networkI on genome
-
-	--Have to reset the network so as to not carry on past uses
-	genome.networkI = {}
-
-  --This prepares a list of all nodes with a list of all genes from sed node
-  for i = 1,#geneList do
-		if geneList[i].enable == true then
-			local Inode = geneList[i].I
-    	--going to have to save current list of genes and then add new one
-    	if genome.networkI[Inode] ~= nil then
-      	tempIlist = genome.networkI[Inode]
-    	end
-
-    	table.insert(tempIlist,geneList[i])
-    	--Remove and replace at position of output
-    	genome.networkI[Inode] = nil
-    	genome.networkI[Inode] = tempIlist
-
-			table.insert(saveing,Inode)
-		end
-  end
-end
-
 function sigmoid(x)
 
   local result = 1/ (1+math.exp(-4.9*x))
@@ -1292,139 +1115,70 @@ function sigmoid(x)
 
 end
 
+--This function puts a list of nodes referenced in genes into genome.network
+function getNetwork(genome)
+	--Adding output nodes to network
+	inputs = getInputs()
 
-
-
-
-
---[[
-So I don't have to worry about a node not having all its inputs so long as I
-take all the outputs for a given distance at the same time and calculate them.
-This is because I have enforced that the input's distance must be less than the
-outputs distance so no node can be connected to by anything at the same distance or further away fromthe initial inputs.
-]]
-
-
---[[
-The structure of networkI is that the index represents the neuron and the
-actual entry is a table of the output neurons
-]]
-
---THIs FUNCITON ISN'T WORKING CORRECTLY!!!
-function evaluateNetwork(genome)
-
-  getNetworkI(genome)
---Confident this works as intended!!!!!!!!!!!
-  local currentLayer = {}
-	--[[not exactly sure if Im going to change this but currently it is
-	working out that i have to index currentlayer twice to get to the gene.
-	Not exactly a problem just looks bad :L]]
-  local net = genome.networkI
-
---[[	for i = 1,#saveing do
-		if gen.frame%10 == 0 then
-			for j = 1,#net[saveing[i]] --do
-		--		console.writeline(net[saveing[i]][j])
-		--[[		console.writeline("gap")
+	for i = 1,outputNum do
+		local temptable = {}
+		temptable.node = i
+		temptable.inputGenes = {}
+		for j = 1,#genome.genes do
+			if genome.genes[j].O = i then
+				table.insert(temptable.input,genome.genes[j])
 			end
 		end
+		table.insert(genome.network,temptable)
 	end
-]]
-  --Getting input values to start Evaluation
-  local inputs = getInputs()
-  --^This is an inputNum size table with the value {-1,0,1} fo reach node^
 
-	--This is the "always on" node
-	inputs[#inputs + 1] = 1
-
-
-	--HASH TABLES
-  local outputSum = {}
-  local outputCheckRef = {}
-
-  --Initialising by adding the inputs that are firing into the current layer table
-  local tempTable = {}
-  for i = 1,inputNum do
-    if net[i] ~= nil then
-      table.insert(tempTable,i)
-      outputSum[i] =  inputs[i]
-      outputCheckRef[i] = true
-      --After having done the above, the first neurons output will be recorded in outputSum. (outputCheckRef also updated)
-    end
-  end
-  table.insert(currentLayer,tempTable)
---These inital inputs will be 1 if standable block, -1 if enemy and 0 if nothing
-
---Creating a condition that, while there is anything in current layer, will repeat
-
-  while #currentLayer ~= 0 do
-
-
-    --Temporary table to store next layer in
-    local nextLayer = {}
-
-    --iterate over all input nodes in this layer
-    for i = 1,#currentLayer do
-
-			--ProbabLY NEED TO ADD ANOTHER FOR LOOP TO ITERATE over multiple nodes!!
-
-			for k = 1,#currentLayer[i] do
-      	--So inputNodeNum is just the number of a node
-      	local inputNodeNum = currentLayer[i][k]
-
-
-      	--Making sure not a terminal node
-      	if net[inputNodeNum] ~= nil then
-        	--iterate over all output nodes for this node
-        	local genesI = net[inputNodeNum]
-
-        	for j = 1,#genesI do
-          --[[There may not necessarily be anything in outputsum yet so Have
-					to make if statement]]
-						if outputSum[genesI[j].O] == nil then
-          		outputSum[genesI[j].O] = outputSum[inputNodeNum] * genesI[j].weight
-						else
-							outputSum[genesI[j].O] = outputSum[genesI[j].O] + outputSum[inputNodeNum] * genesI[j].weight
-						end
-          --also add them to nextLayer if outputCheckRef = false
-					--This is currently successfully updating
-          	if outputCheckRef[genesI[j].O] == false or 	outputCheckRef[genesI[j].O] == nil then
-            	outputCheckRef[genesI[j].O] = true
-            	table.insert(nextLayer,genesI[j].O)
-          	end
-        	end
-
-					--[[this ensures all sum's are ran through the sigmoid function]]
-					for j = 1,#genesI do
-						--Think this is necessary so that sigmoid doesn;t make something out of 0 values
-							if outputSum[genesI[j].O] ~= 0 then
-								outputSum[genesI[j].O] = sigmoid(outputSum[genesI[j].O])
-							end
-					end
-      	else
-					--sigmoid already applied
-        	if outputSum[inputNodeNum] > 0.5 then
-          --do inputNodeNum - #inputs to give an index for controller table
-					if ButtonNames[inputNodeNum-#inputs] == nil then
-						console.writeline(inputNodeNum)
-						saveGenome(genome,5000,5000,50000)
-					end
-
-		      	controller["P1 " .. ButtonNames[inputNodeNum-#inputs]] = true
-        	end
-      	end
-    	end
+	--Adding hidden nodes to network
+	for i = inputNum + outputNum + 1,genome.mostNode do
+		if genome.nodes[i] ~= nil then
+			local temptable = {}
+			temptable.node = i
+			temptable.inputGenes = {}
+			for j = 1,#genome.genes do
+				if genome.genes[j].O = i then
+					table.insert(temptable.inputGenes,genome.genes[j])
+				end
+			end
+			table.insert(genome.network,temptable)
 		end
-    --Remove current layer
-      table.remove(currentLayer)
+	end
+end
 
-    --Add new layer
-    --TO make sure condition is broken when only output nodes are given
-		if #nextLayer ~= 0 then
-      table.insert(currentLayer,nextLayer)
-    end
+function evaluateNetwork(genome)
+--[[
+So the plan is to store the i'th node's value in the i'th entry to
+genome.nodes. This means I'll have to update only the inputs at first and
+then everything else can be updated on its own in this function
+]]
+	getNetwork(genome)
 
-  end
+	network = genome.network
+
+	--iterate over all no terminal nodes to get output values
+	for i = outputNum+1,#network do
+		local sum = 0
+		for j = 1,#network[i].inputGenes do
+			local inputGene = network[i].inputGenes[j]
+			sum = sum + genome.nodes[inputGene.I] * inputGene.weight
+		end
+		genome.nodes[network[i].node] = sigmoid(sum)
+	end
+
+	--Calculate output values and set controllee accordingly
+	for i = 1,outputNum do
+		local sum = 0
+		for j = 1,#network[i].inputGenes do
+			local inputGene = network[i].inputGenes[j]
+			sum = sum + genome.nodes[inputGene.I] * inputGene.weight
+		end
+		if sigmoid(sum) > 0.5 then
+			controller["P1 " .. ButtonNames[i]] = true
+		end
+	end
 end
 
 
@@ -1464,10 +1218,7 @@ end
 
 initialise()
 
-counter = 0
-
-
-while true  do
+while true do
 
 
 	species = gen.species[gen.currentSpecies]
@@ -1527,6 +1278,8 @@ while true  do
 	tostring(controller["P1 " .. ButtonNames[8]]))
 
 
+
+--All of this just to help me debug
 
 	local needThese = getInputs()
 

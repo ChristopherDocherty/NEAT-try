@@ -52,3 +52,6 @@ the issue was once again scope.....
 Having re-read the NEAT paper, I have realised that I have implemented the algorithm incorrectly and perhaps even in a way that makes life more difficult.
 
 Basically, I had to do a lot of work to enforce a feed forward network when I could just store the nodes as part of the genome with their own values.
+
+
+Have to fix findInno though...
