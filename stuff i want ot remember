@@ -1,0 +1,8 @@
+If checking for no entries in table then use #table = 0
+
+if checking for no entries at a specific index then = nil
+
+
+
+When using hash tables do yourself a favour and don't use table.insert...
+DEFINITELY dont use table.remove()
