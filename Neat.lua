@@ -1,14 +1,12 @@
-console.writeline("help!")
-console.writeline(1)
-
 --Constants
-population = 300
+population = 150
 genNum = 0
 nodeNum = 0
 innovation = 0
 stepSize = 1 --From NEAT paper
 propForDeath = 0.5
 TimeoutConstant = 20--For genomes that are stuck
+eliteTOkeep = 1
 
 --Mutation Constants
 mChance = 0.25
@@ -52,8 +50,6 @@ inputNum = InputSize+1
 outputNum = #ButtonNames
 
 
-
-console.writeline(2)
 function clearJoypad()
 	controller = {}
 	for b = 1,#ButtonNames do
@@ -156,8 +152,6 @@ function getInputs()
 end
 
 --Data structures
-console.writeline(3)
-
 
 ---have to store I/O's in here
 inno = {}
@@ -185,7 +179,6 @@ function makeNode(genome,gene)
   local nodeID = 0
 
   local i = 1
-
   while found == false and i <= #inno.nodes do
     if gene.I == inno.nodes[i].input and gene.O == inno.nodes[i].output then
       found = true
@@ -199,9 +192,10 @@ function makeNode(genome,gene)
     tempTable.input = gene.I
     tempTable.output = gene.O
 
-    table.insert(inno.nodes,temp)
+    table.insert(inno.nodes,tempTable)
     nodeID = #inno.nodes
   end
+
 
   return nodeID
 	--[[on creation, nodes have a unique I/O identifier, so if that is stored on
@@ -249,6 +243,22 @@ function makeGenome()
 end
 
 
+
+function copyGene(gene1)
+
+	local gene2 ={}
+
+	gene2.I = gene1.I
+	gene2.O = gene1.O
+	gene2.weight = gene1.weight
+	gene2.enable = gene1.enable
+	gene2.innovation = gene1.innovation
+
+	return gene2
+
+end
+
+
 function makeSpecies()
 
 
@@ -287,7 +297,6 @@ function makeGen()
 
 end
 
-console.writeline(4)
 
 function gaussStep()
 
@@ -302,8 +311,7 @@ end
 function randomNodes(genome)
   --Always want 2 nodes out
   --This function needs to get a unique (for the genome) pair of nodes
-
-  local geneList = genome.genes
+ 	local geneList = genome.genes
 
   --Finding if unique and regenerateing if not
   local unique = false
@@ -314,15 +322,15 @@ function randomNodes(genome)
 		while present == false do
     	--Initialisation for loop
     	O = outputNum +1
-
     	while O > outputNum and O <= (inputNum + outputNum) do
-				O = math.random(1,#inno.nodes)
+				O = math.random(1,outputNum)
     	end
 			I = math.random(outputNum+1,#inno.nodes)
 
 			if genome.nodes[O] ~= nil and genome.nodes[I] ~= nil then
 				present = true
 			end
+
 		end
 
 
@@ -339,11 +347,9 @@ function randomNodes(genome)
       unique = true
     end
   end
-
   return I,O
 
 end
-console.writeline(6)
 
 --For getting the innovation of genes
 function getInno(I,O)
@@ -393,10 +399,10 @@ end
 
 function addNode(genome)
 
-  local addGene1 = makeGene()
+	local addGene1 = makeGene()
   local addGene2 = makeGene()
 
-local selected = 0
+	local selected = 1
 	local enabled = false
 	while enabled == false do
 		selected = math.random(1,#genome.genes)
@@ -406,14 +412,14 @@ local selected = 0
 	disruptGene = genome.genes[selected]
 
 	local actuallyNew = false
+	local newNode = 0
 
-	while actuallyNew == false do
-		 newNode = makeNode(genome, disruptGene)
-		 if genome.nodes[newNode] == nil then
-			 actuallyNew = true
-			 genome.nodes[newNode] = 0
-		 end
+	newNode = makeNode(genome,disruptGene)
+
+	if genome.nodes[newNode] == nil then
+		 genome.mostNode = genome.mostNode + 1
 	end
+	genome.nodes[newNode] = 0
 
   addGene1.I = disruptGene.I
   addGene1.O = newNode
@@ -428,7 +434,8 @@ local selected = 0
 
   table.insert(genome.genes,addGene1)
   table.insert(genome.genes,addGene2)
-  genome.genes[selected].enable = false
+
+  disruptGene.enable = false
 
 end
 
@@ -447,7 +454,7 @@ function alterWeight(genome)
 	end
 
 end
-console.writeline(7)
+
 --[[Implementation choice of whether multiple different types of mutatoin can
 or not. Here I have chosen only one kind of mutation because I don't know which
 is correct]]
@@ -456,11 +463,11 @@ function mutate(genome)
  local rng = math.random()
 
  if rng < mWeight then
-   alterWeight(genome)
+   --alterWeight(genome)
  elseif rng < mWeight + mAddNode then
    addNode(genome)
  elseif  rng < mWeight + mAddNode + mAddLink then
-   addLink(genome)
+   --addLink(genome)
  end
 
 return genome
@@ -656,21 +663,30 @@ function recombine(g1,g2)
       local gene2 = innovations2[gene1.innovation]
 
       if gene2 ~= nil and math.random(2) == 1 then
-        table.insert(child.genes,gene2)
+				local geneCopy = copyGene(gene2)
+        table.insert(child.genes,geneCopy)
       else
-        table.insert(child.genes,gene1)
+				local geneCopy = copyGene(gene1)
+        table.insert(child.genes,geneCopy)
       end
     end
+
+		--[[Cannot inherit nodes from g2 as any genes with a node not
+		present in g1 will not be copied]]
+
+		child.nodes = g1.nodes
+		child.mostNode = g1.mostNode
 		return child
 
   	else
     	--If not from recombination just copy fitter individual
     	child.genes = g1.genes
+			child.nodes = g1.nodes
+			child.mostNode = g1.mostNode
 
     return child
   end
 end
-
 
 
 
@@ -683,7 +699,6 @@ function breed()
   local bred = {}
 
   for i = 1,#species do
-
     for j = 1,species[i].numTObreed do
 
       local genomeCnt = #species[i].genomes
@@ -705,9 +720,8 @@ end
 function createPop()
 
   local childtemp = {}
-	local forElitisim = {}
 
-  for i = 1,#gen.species do
+--[[  for i = 1,#gen.species do
     --Elitism
     if #gen.species[i].elite ~= 0 then
 			gen.species[i].elite[1].fitness = 0
@@ -716,13 +730,14 @@ function createPop()
       gen.eliteNum = gen.eliteNum +1
     end
 		for j = 1,#gen.species[i].genomes do
-			if gen.species[i].genomes[j].globalRank < 10 then
+			if gen.species[i].genomes[j].globalRank < eliteTOkeep then
 				gen.species[i].genomes[j].fitness = 0
 				table.insert(childtemp,gen.species[i].genomes[j])
+	      gen.eliteNum = gen.eliteNum +1
 			end
 		end
   end
-
+]]
 
   --Making babies
   --Needed number of elite for this function
@@ -731,7 +746,6 @@ function createPop()
    killWeaklings()
    --meaning sort and remove bottom so many
 
-	 --WORKS TO HERE!!!!
    children = breed()
    --Adding the elite members into the children
    for i = 1,#childtemp do
@@ -1001,7 +1015,9 @@ function initialiseRun()
 	timeout = TimeoutConstant
 	clearJoypad()
 
-	--[[
+	local species = gen.species[gen.currentSpecies]
+	local genome = species.genomes[gen.currentGenome]
+
 	--This is done so that no values from a previous run are carried over
 	for i = 1,outputNum do
 		genome.nodes[i] = 0
@@ -1012,14 +1028,11 @@ function initialiseRun()
 		end
 	end
 
-	local species = gen.species[gen.currentSpecies]
-	local genome = species.genomes[gen.currentGenome]
-	evaluateNetwork(genome)]]
+	evaluateNetwork(genome)
 end
 
 
 function initialise()
-	console.writeline("test")
 	--[[
 	As part of initialsiation I have to add the input and output nodes to
 	inno.nodes if I or O is 0 then it is an I/O node, -1 indicate invalid
@@ -1037,7 +1050,6 @@ function initialise()
 	  temp.input = 0
 	  temp.output = -1
 	  table.insert(inno.nodes,temp)
-
 	end
 
   --Will reset currents on 1
@@ -1046,6 +1058,11 @@ function initialise()
   for i = 1,population do
 
     local genome = makeGenome()
+
+		--If this is not done then random nodes does not work
+		for i = 1, inputNum + outputNum do
+			genome.nodes[i] = 0
+		end
 
     addLink(genome)
     --Performing speciation for only one genome
@@ -1116,16 +1133,17 @@ end
 
 --This function puts a list of nodes referenced in genes into genome.network
 function getNetwork(genome)
-	--Adding output nodes to network
-	inputs = getInputs()
+	--Resetting the network
+	genome.network = {}
 
+	--Adding output nodes to network
 	for i = 1,outputNum do
 		local temptable = {}
 		temptable.node = i
 		temptable.inputGenes = {}
 		for j = 1,#genome.genes do
 			if genome.genes[j].O == i then
-				table.insert(temptable.input,genome.genes[j])
+				table.insert(temptable.inputGenes,genome.genes[j])
 			end
 		end
 		table.insert(genome.network,temptable)
@@ -1153,11 +1171,21 @@ So the plan is to store the i'th node's value in the i'th entry to
 genome.nodes. This means I'll have to update only the inputs at first and
 then everything else can be updated on its own in this function
 ]]
+
+	local inputs = getInputs()
+
+	for i = outputNum+1,inputNum+outputNum -1 do
+			genome.nodes[i] = inputs[i-outputNum]
+	end
+
+	--Always-on node
+	genome.nodes[inputNum+outputNum] = 1
+
 	getNetwork(genome)
 
 	network = genome.network
 
-	--iterate over all no terminal nodes to get output values
+	--iterate over all non terminal nodes to get output values
 	for i = outputNum+1,#network do
 		local sum = 0
 		for j = 1,#network[i].inputGenes do
@@ -1214,8 +1242,6 @@ end
 --Start of actual code
 
 --event.onexit(saveGen)
-
-console.writeline("help!4545")
 
 initialise()
 
