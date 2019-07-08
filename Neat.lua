@@ -6,7 +6,7 @@ innovation = 0
 stepSize = 1 --From NEAT paper
 propForDeath = 0.5
 TimeoutConstant = 20--For genomes that are stuck
-eliteTOkeep = 1
+eliteTOkeep = 7
 
 --Mutation Constants
 mChance = 0.25
@@ -26,7 +26,7 @@ c1 = 1
 c2 = 1
 c3 = 0.4
 deltaT = 3
-staleLim = 30
+staleLim = 20
 
 
 --Copied parts
@@ -463,11 +463,11 @@ function mutate(genome)
  local rng = math.random()
 
  if rng < mWeight then
-   --alterWeight(genome)
+   alterWeight(genome)
  elseif rng < mWeight + mAddNode then
    addNode(genome)
  elseif  rng < mWeight + mAddNode + mAddLink then
-   --addLink(genome)
+   addLink(genome)
  end
 
 return genome
@@ -483,11 +483,9 @@ function genRank()
 
   for i = 1,#gen.species do
 
-    local tempSpecies = gen.species[i]
+    for j = 1,#gen.species[i].genomes do
 
-    for j = 1,#species.genomes do
-
-      table.insert(forSort,species.genomes[j])
+      table.insert(forSort,gen.species[i].genomes[j])
     end
   end
 
@@ -578,6 +576,7 @@ function SUS()
   local i = 1
   local a = 0
   local wantChildNum = population - gen.eliteNum
+	gen.eliteNum = 0
 
   --TO make sure required number of children is found
   local overallChildNum = 0
@@ -719,16 +718,11 @@ end
 
 function createPop()
 
+	local children = {}
   local childtemp = {}
 
---[[  for i = 1,#gen.species do
+  for i = 1,#gen.species do
     --Elitism
-    if #gen.species[i].elite ~= 0 then
-			gen.species[i].elite[1].fitness = 0
-      table.insert(childtemp,gen.species[i].elite[1])
-      table.remove(gen.species[i].elite)
-      gen.eliteNum = gen.eliteNum +1
-    end
 		for j = 1,#gen.species[i].genomes do
 			if gen.species[i].genomes[j].globalRank < eliteTOkeep then
 				gen.species[i].genomes[j].fitness = 0
@@ -737,7 +731,6 @@ function createPop()
 			end
 		end
   end
-]]
 
   --Making babies
   --Needed number of elite for this function
@@ -747,10 +740,11 @@ function createPop()
    --meaning sort and remove bottom so many
 
    children = breed()
+
    --Adding the elite members into the children
    for i = 1,#childtemp do
      table.insert(children,childtemp[i])
-   end
+	 end
 
    local nextGenSpecies = {}
 
@@ -766,8 +760,6 @@ function createPop()
 
     end
    --save one genome in examples but remove all the rest
-
-
 
    return children, nextGenSpecies
 
@@ -1079,9 +1071,10 @@ end
 function nextGen()
 
   genRank()
---around here
 
-	--Probably inefficient method
+	local children = {}
+	local nextGenSpecies = {}
+
   for i =1,#gen.species do
     --Species ranking and summation of
     --Also storing fittest idnividual's data
@@ -1230,7 +1223,6 @@ end
 
 function fitnessMeasured()
 
-	--Error: unable to index s because all species have been destroyed
   local s = gen.species[gen.currentSpecies]
   local g = s.genomes[gen.currentGenome]
 
