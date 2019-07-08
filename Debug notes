@@ -65,3 +65,5 @@ now I have a new infinite loop inbewteen generations yayyyyy :'(
 This infinite loop..... absolute hell to solve. It turned out that because I changed enable on the gene before i had finished making a full population, i was making all the genes (all one of them) disabled so no nodes were made
 
 elitism wasn't working because of the incorrect way i used table in genRank earlier on... Now fixed! so there is a constant population
+
+Still no file storage

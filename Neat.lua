@@ -960,32 +960,43 @@ function saveGen()
 
   file:write(#inno.nodes .."\n")
   for i = 1,#inno.nodes do
-    file:write(inno.nodes[i] .. " ")
-    fiel:write(inno.nodes[i] .. "\n")
+    file:write(inno.nodes[i].input .. " ")
+    file:write(inno.nodes[i].output .. "\n")
   end
 
   file:write("\n")
 
-  file:write(#gen.species)
+  file:write(#gen.species .. "\n")
   for i = 1,#gen.species do
     file:write(i .. "\n")
-    file:write(gen.species[i].staleness)
-    file:write(gen.species[i].example)
+    file:write(gen.species[i].staleness .. "\n")
+    file:write(gen.species[i].example .. "\n")
 
-    local genomes = gen.species[i].genomes
-    file:write(#genomes)
-    for j = 1,#genomes do
-      file:write(genome.genes[i].I .. " ")
-      file:write(genome.genes[i].O .. " ")
-      file:write(genome.genes[i].weight .. " ")
-      if genome.genes[i].enable == true then
-        file:write("1 ")
-      else
-        file:write("0 ")
-      end
-      file:write(genome.genes[i].innovation .. "\n")
-    end
-    file:write("\n")
+		file:write(#gen.species[i].genomes .."\n")
+		for j = 1,#gen.species[i].genomes do
+    	local genomes = gen.species[i].genomes[j]
+			file:write(genomes.mostNode)
+
+			for k = 1,#genomes.nodes do
+
+			end
+
+
+
+
+    	for k = 1,#genomes.genes do
+      	file:write(genome.genes[k].I .. " ")
+      	file:write(genome.genes[k].O .. " ")
+      	file:write(genome.genes[k].weight .. " ")
+      	if genome.genes[k].enable == true then
+        	file:write("1 ")
+      	else
+        	file:write("0 ")
+      	end
+      	file:write(genome.genes[k].innovation .. "\n")
+    	end
+    	file:write("\n")
+			end
   end
         file:close()
 end
@@ -1245,6 +1256,7 @@ while true do
 
 
 	if gen.frame%5 == 0 then
+		clearJoypad()
 		evaluateNetwork(genome)
 	end
 
