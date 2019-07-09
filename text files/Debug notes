@@ -1,0 +1,76 @@
+Got it to run and make some changing controller inputs, now ahve to stop species from dying and work out why a button is always pressed???
+
+
+I now have it sometimes giving out a positive controller output as should be
+expected :)
+
+
+I think the other error I'm getting is, at least in part, related to the
+species dying. Pretty sure that getting nonsense values back from constantGet()
+is heavily contributing to the species dying.
+
+
+
+So the total population still decreases for some reason (by one each
+generation)... but I fixed speciation --FIXED! but no broken another part ''':(
+
+put writelines at all instances of sigmoid calls towork out this other error
+that persists --FIXED  THE ERRPR
+
+
+Now the problem is no file saves... Actually does work - only saving 5 best from each gen
+
+
+
+Problem for linearly increasing node outputs likely in getnetworkI
+
+Yep it was, had not been clearing networkI each time
+
+NLua.Exceptions.LuaScriptException: [string "main"]:341: attempt to index field '?' (a nil value)
+
+I HAVE CONFIRMATION THAT IT IS TAKING IN THE NON CONSTANT INPUT!!!
+
+
+
+The latest bug comes as a result of species that die off, have to remove them
+
+implemented a way to do so
+
+getMaxDistance() has straight up just not been tested for non input/output node cases... DOH!
+
+the problem was just tht I wrote that code before I understood lua tables well - seemingly easy fix
+
+I can see some problems now, some genes are being saved twice over...don't knwo why and species are not being selected by fitness '\(")/'
+
+
+Was not stopping disabled genes from firing and now that I have i get an error that the gene doesny exist
+
+the issue was once again scope.....
+
+
+
+Having re-read the NEAT paper, I have realised that I have implemented the algorithm incorrectly and perhaps even in a way that makes life more difficult.
+
+Basically, I had to do a lot of work to enforce a feed forward network when I could just store the nodes as part of the genome with their own values.
+
+
+Have to fix findInno though...
+
+
+fixed teh crash bug, was stuck in infinite loop because i had not populated genome.nodes...
+
+now I have a new infinite loop inbewteen generations yayyyyy :'(
+
+
+This infinite loop..... absolute hell to solve. It turned out that because I changed enable on the gene before i had finished making a full population, i was making all the genes (all one of them) disabled so no nodes were made
+
+elitism wasn't working because of the incorrect way i used table in genRank earlier on... Now fixed! so there is a constant population
+
+Still no file storage
+
+
+
+There is a problem with removing species with no members, potential ways
+to fix it involve sorting by number of genomes with those with the least
+at the end. Then start at the end (for i =... do// (i-#genomes)) so they
+are not missed

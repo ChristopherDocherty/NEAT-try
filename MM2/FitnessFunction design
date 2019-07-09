@@ -1,0 +1,68 @@
+For the Inputs, create a grid like in SMW but with higher resolution.
+
+If something that can damage in square then -1, if megaman in square then +1.
+
+Only 4 outputs, no need for up and down.
+
+Metalman sprite is 23x22 pixels in standing probably taking it as 25x25 pixels will work well enough
+
+Megaman sprite is at most 30x25 but normally more like 21x24
+
+
+Metal blade sprite is 15x15
+
+
+Stage corners: (16,183),(239,183),(16,24),(239,24) (y values are from top to
+ bottom)
+
+
+
+If using 15x15 boxes then need 158 to cover whole area
+
+Streamlining the outputs a bit (by removing up and down which do nothing in
+this part of the level) that gives 159 inputs and 4 outputs
+
+
+
+As stage is 223x159 need to allocate boxes accordingly. Slighlty nicer numbers
+is using 16x16, that way I only need to have 14x10 boxes giving slightly less
+inputs but less wasted boxes
+
+so boxes will be 16x16 and they will be arranged in a 14x10 rectangle starting
+at (16,183)
+
+A box will have a non-zero input if a function getDistance()
+ is below some threshold value
+
+
+Metal blade threshold = 13px
+Metalman threshold = 25px
+Megaman threshold = 25px
+
+
+So I have to create the following functions
+
+getSprites()
+getNearInputBoxes()
+getInputs()
+
+input boxes are number across a row first, then down a column.
+
+
+fitness psuedofunction needs to read metalman health and count frames for some
+combination. Stop evaluating condition is megaman getting hit.
+
+
+Memory locations
+
+06C1 - Boss health
+0460 - x-pos megaman
+04A0 - y-pos megaman
+0461 - x-pos metalman
+04A1 - y-pos metalman
+047D - x-pos metalblade1
+04BD - y-pos metalblade1
+047C - x-pos metalblade2
+04BC - y-pos metalblade2
+047B - x-pos metalblade3
+04BB - y-pos metalblade3
