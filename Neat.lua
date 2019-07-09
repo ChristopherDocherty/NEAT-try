@@ -1,5 +1,5 @@
 --Constants
-population = 1000
+population = 650
 genNum = 0
 stepSize = 1
 propForDeath = 0.5
@@ -254,6 +254,21 @@ function copyGene(gene1)
 
 end
 
+function copyGenome(genome1)
+
+	local genome2 = {}
+
+	genome2.genes = genome1.genes
+  genome2.speciesRank = genome1.speciesRank
+  genome2.globalRank = genome1.globalRank
+  genome2.fitness = genome1.fitness
+  genome2.nodes = genome1.nodes
+	genome2.mostNode = genome1.mostNode
+	genome2.network = genome1.network
+
+	return genome2
+
+end
 
 function makeSpecies()
 
@@ -745,6 +760,19 @@ function createPop()
 	      gen.eliteNum = gen.eliteNum +1
 			end
 		end
+
+		if #gen.species[i].genomes >= 5 then
+			for j = 1,#gen.species[i].genomes do
+				if gen.species[i].genomes[j].speciesRank == 1 then
+					gen.species[i].genomes[j].fitness = 0
+					copiedGenome = copyGenome(gen.species[i].genomes[j])
+					table.insert(childtemp,copiedGenome)
+		      gen.eliteNum = gen.eliteNum +1
+				end
+			end
+		end
+
+
   end
 
   --Making babies
@@ -1102,7 +1130,6 @@ end
 function nextGen()
 
 	saveGen()
-	console.writeline("passed")
   genRank()
 
 	local children = {}
@@ -1129,7 +1156,6 @@ function nextGen()
   speciate(children,true)
 
 	--Have to ensure that dead species are removed!
-
 	local index = 1
 	local specCount = #gen.species
 	while index < specCount do
@@ -1251,7 +1277,6 @@ function nextGenome()
 		gen.currentGenome = 1
     gen.currentSpecies = 1
   end
-
 end
 
 function fitnessMeasured()
