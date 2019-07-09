@@ -1,9 +1,7 @@
 --Constants
-population = 150
+population = 1000
 genNum = 0
-nodeNum = 0
-innovation = 0
-stepSize = 1 --From NEAT paper
+stepSize = 1
 propForDeath = 0.5
 TimeoutConstant = 20--For genomes that are stuck
 eliteTOkeep = 7
@@ -12,10 +10,8 @@ eliteTOkeep = 7
 mChance = 0.25
 mWeight = 0.8
 mPerturb = 0.9
-mAddLink = 0.05
+mAddLink = 0.3
 mAddNode = 0.03
-mEnable = 0.4
-mDisable = 0.2
 
 --Recombination Constants
 rDisable = 0.75
@@ -26,7 +22,7 @@ c1 = 1
 c2 = 1
 c3 = 0.4
 deltaT = 3
-staleLim = 20
+staleLim = 15
 
 
 --Copied parts
@@ -455,19 +451,21 @@ function alterWeight(genome)
 
 end
 
---[[Implementation choice of whether multiple different types of mutatoin can
-or not. Here I have chosen only one kind of mutation because I don't know which
-is correct]]
+--[[In this 1000 population version, the probabilites add up to more
+than one so I am allowing multiple different types of muation to occur]]
+
 function mutate(genome)
 
  local rng = math.random()
 
  if rng < mWeight then
-   alterWeight(genome)
- elseif rng < mWeight + mAddNode then
+	 alterWeight(genome)
+ end
+ if  rng < mAddLink then
+	 addLink(genome)
+ end
+ if rng < mAddNode then
    addNode(genome)
- elseif  rng < mWeight + mAddNode + mAddLink then
-   addLink(genome)
  end
 
 return genome
@@ -542,11 +540,7 @@ function speciesRank(species,speciesNum)
 
   --Saving good genomes
   if #species.genomes > 5 then
-    for i = 1,5 do
-      saveGenome(forSort[i],gen.number,speciesNum,i)
-    end
-  else
-    saveGenome(forSort[1],gen.number,speciesNum,1)
+      saveGenome(forSort[1],gen.number,speciesNum,1)
   end
 end
 
@@ -662,11 +656,23 @@ function recombine(g1,g2)
       local gene2 = innovations2[gene1.innovation]
 
       if gene2 ~= nil and math.random(2) == 1 then
+
 				local geneCopy = copyGene(gene2)
+				local rng = math.random()
+				if geneCopy.enable == false and rng < (1-rDisable) then
+					geneCopy.enable = true
+				end
         table.insert(child.genes,geneCopy)
+
       else
+
 				local geneCopy = copyGene(gene1)
+				local rng = math.random()
+				if geneCopy.enable == false and rng < (1-rDisable) then
+					geneCopy.enable = true
+				end
         table.insert(child.genes,geneCopy)
+
       end
     end
 
@@ -703,7 +709,16 @@ function breed()
       local genomeCnt = #species[i].genomes
 
       g1 = species[i].genomes[math.random(1,genomeCnt)]
-      g2 = species[i].genomes[math.random(1,genomeCnt)]
+			g2 = species[i].genomes[math.random(1,genomeCnt)]
+
+
+			local rng = math.random()
+			if rng < rInter then
+				local interNum = math.random(1,#species)
+				local interGenomeCnt = #species[interNum].genomes
+				g2 = species[interNum].genomes[math.random(1,interGenomeCnt)]
+			end
+
 
       local child = recombine(g1,g2)
 
@@ -750,21 +765,19 @@ function createPop()
 
   for i = 1,#gen.species do
     if gen.species[i].staleness < staleLim then
+			--Update example as per NEAT paper
+			table.remove(gen.species[i].example)
+			local rng = math.random(1,#gen.species[i].genomes)
+			table.insert(gen.species[i].example,gen.species[i].genomes[rng])
 			--Need to remove old genomes...
 			local getLostNum = #gen.species[i].genomes
 			for j = 1,getLostNum do
 				table.remove(gen.species[i].genomes)
 			end
-
       table.insert(nextGenSpecies,gen.species[i])
-
     end
-   --save one genome in examples but remove all the rest
-
-   return children, nextGenSpecies
-
  	end
-
+   return children, nextGenSpecies
 end
 
 --for disjoint not considering equal case
@@ -945,12 +958,12 @@ end
 --For on exit
 function saveGen()
 
-  local filename = "Generation-" .. gen.number .. "-Save.gen"
+  local filename = "generation\\Generation-" .. gen.number .. "-Save.gen"
 
-        file = io.open(filename)
+        local file = io.open(filename, "w")
   file:write(gen.number .. "\n\n")
 
-  file:write(#inno.genes .. "/n")
+  file:write(#inno.genes .. "\n")
   for i = 1,#inno.genes do
     file:write(inno.genes[i].I .. " ")
     file:write(inno.genes[i].O .. "\n")
@@ -970,21 +983,28 @@ function saveGen()
   for i = 1,#gen.species do
     file:write(i .. "\n")
     file:write(gen.species[i].staleness .. "\n")
-    file:write(gen.species[i].example .. "\n")
 
 		file:write(#gen.species[i].genomes .."\n")
 		for j = 1,#gen.species[i].genomes do
-    	local genomes = gen.species[i].genomes[j]
-			file:write(genomes.mostNode)
+    	local genome = gen.species[i].genomes[j]
+			file:write(genome.mostNode .. "\n")
 
-			for k = 1,#genomes.nodes do
+			local Counter = 0
+			for k = 1,genome.mostNode do
+				if genome.nodes[k] ~= nil then
+					Counter = Counter + 1
+				end
+			end
+			file:write(Counter .. "\n")
 
+			for k = 1,genome.mostNode do
+				if genome.nodes[k] ~= nil then
+					file:write(k .. "\n")
+				end
 			end
 
-
-
-
-    	for k = 1,#genomes.genes do
+			file:write(#genome.genes .. "\n")
+    	for k = 1,#genome.genes do
       	file:write(genome.genes[k].I .. " ")
       	file:write(genome.genes[k].O .. " ")
       	file:write(genome.genes[k].weight .. " ")
@@ -1081,6 +1101,8 @@ end
 
 function nextGen()
 
+	saveGen()
+	console.writeline("passed")
   genRank()
 
 	local children = {}
