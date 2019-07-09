@@ -1,5 +1,5 @@
 --Constants
-population = 650
+population = 750
 genNum = 0
 stepSize = 1
 propForDeath = 0.5
@@ -643,7 +643,6 @@ end
 --Going to leave out case where g1 fitness is same as g2
 function recombine(g1,g2)
 
-  local equal = false
   local child = makeGenome()
 
   if math.random() <= 0.75 then
@@ -696,6 +695,7 @@ function recombine(g1,g2)
 
 		child.nodes = g1.nodes
 		child.mostNode = g1.mostNode
+
 		return child
 
   	else
@@ -733,7 +733,6 @@ function breed()
 				local interGenomeCnt = #species[interNum].genomes
 				g2 = species[interNum].genomes[math.random(1,interGenomeCnt)]
 			end
-
 
       local child = recombine(g1,g2)
 
@@ -1163,10 +1162,16 @@ function nextGen()
 			table.remove(gen.species,index)
 			index = 1
 			specCount = #gen.species
-		end
+		else
 		index = index + 1
+		end
 	end
 
+	for i = 1,#gen.species do
+		if #gen.species[index].genomes == 0 then
+			console.writeline("still no good :L")
+		end
+	end
 
 end
 
@@ -1283,7 +1288,9 @@ function fitnessMeasured()
 
   local s = gen.species[gen.currentSpecies]
   local g = s.genomes[gen.currentGenome]
-
+	if gen.currentGenome > #gen.species[gen.currentSpecies].genomes then
+		console.writeline(#gen.species[gen.currentSpecies].genomes .. " " .. gen.currentGenome)
+	end
   return g.fitness ~= 0
 
 end
