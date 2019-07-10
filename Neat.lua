@@ -1,17 +1,17 @@
 --Constants
-population = 750
+population = 50
 genNum = 0
 stepSize = 1
 propForDeath = 0.5
-TimeoutConstant = 20--For genomes that are stuck
+TimeoutConstant = 3--For genomes that are stuck
 eliteTOkeep = 7
 
 --Mutation Constants
 mChance = 0.25
 mWeight = 0.8
 mPerturb = 0.9
-mAddLink = 0.3
-mAddNode = 0.03
+mAddLink = 0.8
+mAddNode = 0.6
 
 --Recombination Constants
 rDisable = 0.75
@@ -1115,6 +1115,8 @@ function initialise()
 		end
 
     addLink(genome)
+		addLink(genome)
+		addLink(genome)
     --Performing speciation for only one genome
 
     speciate(genome,false)
@@ -1155,21 +1157,16 @@ function nextGen()
   speciate(children,true)
 
 	--Have to ensure that dead species are removed!
-	local index = 1
-	local specCount = #gen.species
-	while index < specCount do
-		if #gen.species[index].genomes == 0 then
-			table.remove(gen.species,index)
-			index = 1
-			specCount = #gen.species
-		else
-		index = index + 1
-		end
-	end
+	table.sort(gen.species, function (a,b)
+  	return(#a.genomes > #b.genomes)
 
-	for i = 1,#gen.species do
-		if #gen.species[index].genomes == 0 then
-			console.writeline("still no good :L")
+  	end
+  	)
+
+		local specCount = #gen.species
+	for i= 0,specCount-1 do
+		if #gen.species[specCount - i].genomes == 0 then
+			table.remove(gen.species)
 		end
 	end
 
@@ -1332,7 +1329,8 @@ while true do
 
   local timeoutBonus = gen.frame / 4
 	if timeout + timeoutBonus <= 0 then
-		 fitness = rightmost - gen.frame / 2
+		 --fitness = rightmost - gen.frame / 2
+		 fitness = math.random(1,100)
 		if rightmost > 4816 then
 			fitness = fitness + 1000
 		end

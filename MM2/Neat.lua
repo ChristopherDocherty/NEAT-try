@@ -1,5 +1,5 @@
 --Constants
-population = 300
+population = 500
 genNum = 0
 stepSize = 1
 propForDeath = 0.5
@@ -10,7 +10,7 @@ eliteTOkeep = 7
 mChance = 0.25
 mWeight = 0.8
 mPerturb = 0.9
-mAddLink = 0.1
+mAddLink = 0.2
 mAddNode = 0.03
 
 --Recombination Constants
@@ -1166,21 +1166,16 @@ function nextGen()
   speciate(children,true)
 
 	--Have to ensure that dead species are removed!
-	local index = 1
-	local specCount = #gen.species
-	while index < specCount do
-		if #gen.species[index].genomes == 0 then
-			table.remove(gen.species,index)
-			index = 1
-			specCount = #gen.species
-		else
-		index = index + 1
-		end
-	end
---JNDWJNDWJDJWNJDNJWDNJDNJDNJNJW
-	for i = 1,#gen.species do
-		if #gen.species[index].genomes == 0 then
-			console.writeline("still no good :L")
+	table.sort(gen.species, function (a,b)
+  	return(#a.genomes > #b.genomes)
+
+  	end
+  	)
+
+		local specCount = #gen.species
+	for i= 0,specCount-1 do
+		if #gen.species[specCount - i].genomes == 0 then
+			table.remove(gen.species)
 		end
 	end
 
@@ -1335,12 +1330,13 @@ while true do
   --evaluate fitness
 
 	dmgDealt = 28 - memory.readbyte(0x06C1)
-	dmgBonus = dmgDealt * 1000
+	dmgBonus = dmgDealt * 500
 	if dmgDealt == 28 then
 		dmgBonus = dmgBonus + 3000
 	end
 
-	frameBonus = frameBonus + 1/(1+math.exp(0.01*(gen.frame - 1600)))*8
+
+	frameBonus = frameBonus + 1/(1+math.exp(0.01*(gen.frame - 1600)))*0.3
 
 
 
@@ -1352,7 +1348,7 @@ while true do
 
 	megamanHP = memory.readbyte(0x06C0)
 
-	if megamanHP < 28 then
+	if megamanHP < 22 then
 
 		genome.fitness = fitness
 
