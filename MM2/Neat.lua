@@ -1278,6 +1278,7 @@ function nextGenome()
 
   gen.currentGenome = gen.currentGenome + 1
 
+
 	--Returning nil becasue i have removed all of the species
   if gen.currentGenome > #gen.species[gen.currentSpecies].genomes then
     gen.currentSpecies = gen.currentSpecies + 1
@@ -1294,12 +1295,108 @@ function fitnessMeasured()
 
   local s = gen.species[gen.currentSpecies]
   local g = s.genomes[gen.currentGenome]
-	if gen.currentGenome > #gen.species[gen.currentSpecies].genomes then
-		console.writeline(#gen.species[gen.currentSpecies].genomes .. " " .. gen.currentGenome)
-	end
+
   return g.fitness ~= 0
 
 end
+
+
+function loadGen(filename)
+				local file = io.open(filename, "r")
+			gen = makeGen()
+			gen.number = file:read("*number")
+
+			inno = {}
+			inno.genes = {}
+			inno.nodes = {}
+
+			local innoGeneNum = file:read("*number")
+			for i = 1,innoGeneNum do
+				local temp = {}
+		    temp.I,temp.O = file:read("*number","*number")
+		    table.insert(inno.genes,temp)
+			end
+
+			local innoNodeNum = file:read("*number")
+			for i = 1,innoNodeNum do
+				local temp = {}
+				temp.input,temp.output = file:read("*number","*number")
+				table.insert(inno.nodes,temp)
+			end
+
+			local specCount = file:read("*number")
+
+			for i = 1,specCount do
+				local specNum = file:read("*number")
+				local species = makeSpecies()
+				table.insert(gen.species,species)
+				species.staleness = file:read("*number")
+
+				local genomeNum = file:read("*number")
+				for j = 1,genomeNum do --HCANGE
+					local genome = makeGenome()
+					table.insert(species.genomes,genome)
+					genome.mostNode = file:read("*number")
+
+					local genomeNodeNum = file:read("*number")
+					for k = 1,genomeNodeNum do
+						local nodeIndex = file:read("*number")
+						genome.nodes[nodeIndex] = 0
+					end
+
+					local extraNodes ={}
+
+
+					local genomeGeneNum = file:read("*number")
+					for k = 1,genomeGeneNum do
+						local gene = makeGene()
+						table.insert(genome.genes,gene)
+						local enabled
+
+						gene.I,gene.O,gene.weight,enabled,gene.innovation = file:read("*number", "*number", "*number", "*number", "*number")
+						if gene.I > 130 then
+							local countedOredi = false
+							for l = 1,#extraNodes do
+								if extraNodes[l] == gene.I then
+									countedOredi = true
+								end
+							end
+							if countedOredi == false then
+								table.insert(extraNodes,gene.I)
+							end
+						end
+
+						if enabled == 0 then
+							gene.enable = false
+						else
+							gene.enable = true
+						end
+					end
+
+					for k = 1,#extraNodes do
+						genome.nodes[extraNodes[k]] = 0
+						if extraNodes[k] >genome.mostNode then
+							genome.mostNode = extraNodes[k]
+						end
+					end
+				end
+			end
+			file:close()
+end
+
+
+function startFromLoad()
+
+		filename = forms.gettext(nameTextbox)
+		loadGen(filename)
+end
+
+
+form = forms.newform(200, 260, "Loading Bay")
+
+infoLabel = forms.label(form, "Put in the filename (and path) for the save file here",5,8,170,30)
+nameTextbox = forms.textbox(form, "generation\\Generation--Save.gen",170, 25, nil, 5, 50)
+loadButton = forms.button(form, "press me to load!",startFromLoad,5,80,170,100)
 
 
 --Start of actual code
