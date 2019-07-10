@@ -10,7 +10,7 @@ eliteTOkeep = 7
 mChance = 0.25
 mWeight = 0.8
 mPerturb = 0.9
-mAddLink = 0.3
+mAddLink = 0.1
 mAddNode = 0.03
 
 --Recombination Constants
@@ -39,11 +39,11 @@ screen = {}
 --MAY NEED OT CHANGE TO MATCH WITH GAME
 screen.L = 16
 screen.R = 239
-screen.T = 24
+screen.T = 40
 screen.B = 183
 
-horizBoxes = math.ceil(math.abs(screen.R - screen.L )/ boxlength)
-vertBoxes = math.ceil(math.abs(screen.B - screen.T )/ boxlength)
+horizBoxes = math.ceil(math.abs(screen.R - screen.L )/ boxLength)
+vertBoxes = math.ceil(math.abs(screen.B - screen.T )/ boxLength)
 
 inputNum = horizBoxes * vertBoxes
 outputNum = #ButtonNames
@@ -67,9 +67,9 @@ function getSprites()
 	metalman.position = {}
 	metalman.hurt = true
 	local metalmanx = memory.readbyte(0x0461)
-	table.insert(metalman,metlamanx)
+	table.insert(metalman.position,metalmanx)
 	local metalmany = memory.readbyte(0x04A1)
-	table.insert(metalman,metlamany)
+	table.insert(metalman.position,metalmany)
 
 	metalblades = {}
 	metalblades.threshold = 15
@@ -93,47 +93,49 @@ end
 
 function getNearInputBoxes(sprite,inputs)
 
-	local threshold = sprite[1].threshold
-	local hurt = sprtie[1].hurt
+	local threshold = sprite.threshold
+	local hurt = sprite.hurt
 
-	for i = 1,(#sprite[1].position/2) do
+	for i = 1,(#sprite.position/2) do
 
-		local x = sprite[1].position[2*i-1]
-		local y = sprite[1].position[2*i]
+		local x = sprite.position[2*i-1]
+		local y = sprite.position[2*i]
 
+		if x > 10 and x < 234 then
 
-		local dist = 0
-		local metaBoxlength = 0
-		while dist < threshold do
-			dist = dist + boxLength
-			metaBoxlength = metaBoxlength + 1
-		end
+			local dist = 0
+			local metaBoxLength = 0
+			while dist < threshold do
+				dist = dist + boxLength
+				metaBoxLength = metaBoxLength + 1
+			end
 
-		local centreBox = {}
-		centreBox.metaX = math.floor((x-screen.L)/boxLength)
-		centreBox.metaY = math.floor((y-screen.T)/boxLength)
-
-
-		local boxNum = horizBoxes*centreBox.metaY + centreBox.metaX
-		if hurt = true and inputs[boxNum] ~= 1 then
-			inputs[boxNum] = -1
-		elseif inputs[boxNum] ~= -1 then
-			inputs[boxNum] = 1
-		end
+			local centreBox = {}
+			centreBox.metaX = math.floor(((x-screen.L)/16))
+			centreBox.metaY = math.floor((y-screen.T)/boxLength)
 
 
-		--Simple version where just a square around the sprite is changed
-		for j = -metaBoxLength,metaBoxLength do
-			for k = -metaBoxLength,metaBoxLength do
-				local otherBoxNum = boxNum + j + k*vertBoxes
-				if otherBoxNum > 0 and otherBoxNum <= inputNum then
-					if hurt = true and inputs[otherboxNum] ~= 1 then
-						inputs[otherBoxNum] = -1
-					elseif inputs[boxNum] ~= -1 then
-						inputs[otherBoxNum] = 1
+			local boxNum = horizBoxes*centreBox.metaY + centreBox.metaX
+			if hurt == true and inputs[boxNum] ~= 1 then
+				inputs[boxNum] = -1
+			elseif inputs[boxNum] ~= -1 then
+				inputs[boxNum] = 1
+			end
+
+
+			--[[Simple version where just a square around the sprite ichanged
+			for j = -metaBoxLength,metaBoxLength do
+				for k = -metaBoxLength,metaBoxLength do
+					local otherBoxNum = boxNum + j + k*vertBoxes
+					if otherBoxNum > 0 and otherBoxNum <= inputNum then
+						if hurt == true and inputs[otherboxNum] ~= 1 then
+							inputs[otherBoxNum] = -1
+						elseif inputs[boxNum] ~= -1 then
+							inputs[otherBoxNum] = 1
+						end
 					end
 				end
-			end
+			end]]
 		end
 	end
 	return inputs
@@ -146,9 +148,13 @@ function getInputs()
 		inputs[i] = 0
 	end
 
+	getSprites()
+
 	inputs = getNearInputBoxes(megaman,inputs)
 	inputs = getNearInputBoxes(metalman,inputs)
-	inputs = getNearInputBoxes(metalbades,inputs)
+	inputs = getNearInputBoxes(metalblades,inputs)
+
+	return inputs
 end
 
 
@@ -1306,6 +1312,9 @@ end
 --event.onexit(saveGen)
 
 initialise()
+frameBonus = 0
+
+
 
 while true do
 
@@ -1321,21 +1330,31 @@ while true do
 
   joypad.set(controller)
 
-  g
-
-  timeout = timeout - 1
 
 
   --evaluate fitness
-  local fitness = --HERERERE
-  gui.drawText(0,0,"Fitness:" .. tostring(math.abs(fitness)))
 
+	dmgDealt = 28 - memory.readbyte(0x06C1)
+	dmgBonus = dmgDealt * 1000
+	if dmgDealt == 28 then
+		dmgBonus = dmgBonus + 3000
+	end
+
+	frameBonus = frameBonus + 1/(1+math.exp(0.01*(gen.frame - 1600)))*8
+
+
+
+
+  local fitness = math.floor(dmgBonus + frameBonus)
+
+	gui.drawText(0,10,"Fitness:" .. tostring(math.abs(fitness)))
+
+
+	megamanHP = memory.readbyte(0x06C0)
+
+	if megamanHP < 28 then
 
 		genome.fitness = fitness
-
-
-
-
 
 		console.writeline("Gen " .. gen.number .. " species " .. gen.currentSpecies .. " genome " .. gen.currentGenome .. " fitness: " .. fitness)
 
@@ -1346,20 +1365,31 @@ while true do
 			nextGenome()
 		end
 		initialiseRun()
+		frameBonus = 0
   end
 
   gen.frame = gen.frame + 1
 
 
-	gui.drawText(210,100,tostring(controller["P1 " .. ButtonNames[1]]) .. "\n" .. tostring(controller["P1 " .. ButtonNames[2]]) .. "\n" .. tostring(controller["P1 " .. ButtonNames[3]]) .. "\n" .. tostring(controller["P1 " .. ButtonNames[4]]) .. "\n" .. tostring(controller["P1 " .. ButtonNames[5]]) .. "\n" .. tostring(controller["P1 " .. ButtonNames[6]]) .. "\n" ..
-	tostring(controller["P1 " .. ButtonNames[7]]) .. "\n" ..
-	tostring(controller["P1 " .. ButtonNames[8]]))
+	gui.drawText(210,100,tostring(controller["P1 " .. ButtonNames[1]]) .. "\n" .. tostring(controller["P1 " .. ButtonNames[2]]) .. "\n" .. tostring(controller["P1 " .. ButtonNames[3]]) .. "\n" .. tostring(controller["P1 " .. ButtonNames[4]]))
 
+	weeBoxL = 5
 
+	gui.drawBox(140,10,140+(weeBoxL)*horizBoxes,10+(weeBoxL)*vertBoxes,0xFF000000,0x80808080)
 
---All of this just to help me debug
+	forPic = getInputs()
+	for i = 1,inputNum do
+		local x1 = 140+(i%horizBoxes)*weeBoxL
+		local y1 = 10+(math.floor(i/horizBoxes))*weeBoxL
+		local x2 = x1 + weeBoxL
+		local y2 = y1+ weeBoxL
 
-
+		if forPic[i] == 1 then
+			gui.drawBox(x1,y1,x2,y2,0x00000000,0x80013175)
+		elseif forPic[i] == -1 then
+			gui.drawBox(x1,y1,x2,y2,0x00000000,0x80642629)
+		end
+	end
 
 	emu.frameadvance();
 end
