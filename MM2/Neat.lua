@@ -1198,7 +1198,27 @@ end
 function getNetwork(genome)
 	--Resetting the network
 	genome.network = {}
+	local extraNodes ={}
 
+	for i =1,#genome.genes do
+		if genome.genes[i].I > 130 then
+			local countedOredi = false
+			for l = 1,#extraNodes do
+				if extraNodes[l] == genome.genes[i].I then
+					countedOredi = true
+				end
+			end
+			if countedOredi == false then
+				table.insert(extraNodes,genome.genes[i].I)
+			end
+		end
+	end
+	for k = 1,#extraNodes do
+		genome.nodes[extraNodes[k]] = 0
+		if extraNodes[k] >genome.mostNode then
+			genome.mostNode = extraNodes[k]
+		end
+	end
 	--Adding output nodes to network
 	for i = 1,outputNum do
 		local temptable = {}
@@ -1304,7 +1324,7 @@ end
 function loadGen(filename)
 				local file = io.open(filename, "r")
 			gen = makeGen()
-			gen.number = file:read("*number")
+			genNum = file:read("*number")
 
 			inno = {}
 			inno.genes = {}
