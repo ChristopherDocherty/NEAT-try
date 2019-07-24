@@ -66,3 +66,12 @@ Memory locations
 04BC - y-pos metalblade2
 047B - x-pos metalblade3
 04BB - y-pos metalblade3
+
+
+
+Going to try and make a high res version where if a specified proportion of the
+sprite is in another box then that box also activates.
+
+If I make a intrabox xPos variable and then check to see if the difference with
+thresholdProp*threshold is less than 0 or the sum is greater than 16 and
+activate accordingly 

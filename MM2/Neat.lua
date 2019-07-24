@@ -40,7 +40,7 @@ screen = {}
 screen.L = 16
 screen.R = 239
 screen.T = 40
-screen.B = 183
+screen.B = 196
 
 horizBoxes = math.ceil(math.abs(screen.R - screen.L )/ boxLength)
 vertBoxes = math.ceil(math.abs(screen.B - screen.T )/ boxLength)
@@ -48,12 +48,16 @@ vertBoxes = math.ceil(math.abs(screen.B - screen.T )/ boxLength)
 inputNum = horizBoxes * vertBoxes
 outputNum = #ButtonNames
 
+thresholdPerc = 0.15
+
+
 
 
 function getSprites()
 
 	megaman = {}
-	megaman.threshold = 25
+	megaman.thresholdx = 22
+	megaman.thresholdy = 28
 	megaman.position = {}
 	megaman.hurt = false
 	local megamanx = memory.readbyte(0x0460)
@@ -63,7 +67,8 @@ function getSprites()
 
 
 	metalman = {}
-	metalman.threshold = 25
+	metalman.thresholdx = 22
+	metalman.thresholdy = 28
 	metalman.position = {}
 	metalman.hurt = true
 	local metalmanx = memory.readbyte(0x0461)
@@ -72,7 +77,8 @@ function getSprites()
 	table.insert(metalman.position,metalmany)
 
 	metalblades = {}
-	metalblades.threshold = 15
+	metalblades.thresholdx = 13
+	metalblades.thresholdy = 13
 	metalblades.position = {}
 	metalblades.hurt = true
 	local metalblade1x = memory.readbyte(0x047D)
@@ -93,7 +99,8 @@ end
 
 function getNearInputBoxes(sprite,inputs)
 
-	local threshold = sprite.threshold
+	local thresholdx = sprite.thresholdx
+	local thresholdy = sprite.thresholdy
 	local hurt = sprite.hurt
 
 	for i = 1,(#sprite.position/2) do
@@ -103,15 +110,9 @@ function getNearInputBoxes(sprite,inputs)
 
 		if x > 10 and x < 234 then
 
-			local dist = 0
-			local metaBoxLength = 0
-			while dist < threshold do
-				dist = dist + boxLength
-				metaBoxLength = metaBoxLength + 1
-			end
 
 			local centreBox = {}
-			centreBox.metaX = math.floor(((x-screen.L)/16))
+			centreBox.metaX = math.floor(((x-screen.L)/boxLength))
 			centreBox.metaY = math.floor((y-screen.T)/boxLength)
 
 
@@ -122,20 +123,46 @@ function getNearInputBoxes(sprite,inputs)
 				inputs[boxNum] = 1
 			end
 
+			local intraboxXpos = (x-screen.L) - centreBox.metaX*boxLength
+			local intraboxYpos = (y-screen.T) - centreBox.metaY*boxLength
 
-			--[[Simple version where just a square around the sprite ichanged
-			for j = -metaBoxLength,metaBoxLength do
-				for k = -metaBoxLength,metaBoxLength do
-					local otherBoxNum = boxNum + j + k*vertBoxes
-					if otherBoxNum > 0 and otherBoxNum <= inputNum then
-						if hurt == true and inputs[otherboxNum] ~= 1 then
-							inputs[otherBoxNum] = -1
-						elseif inputs[boxNum] ~= -1 then
-							inputs[otherBoxNum] = 1
-						end
-					end
+			if intraboxXpos - thresholdx*thresholdPerc < 0 then
+				boxNumEx = boxNum - 1
+				if hurt == true and inputs[boxNumEx] ~= 1 then
+					inputs[boxNumEx] = -1
+				elseif inputs[boxNumEx] ~= -1 then
+					inputs[boxNumEx] = 1
 				end
-			end]]
+			elseif intraboxXpos + thresholdx*thresholdPerc > 16  then
+				boxNumEx = boxNum + 1
+				if hurt == true and inputs[boxNumEx] ~= 1 then
+					inputs[boxNumEx] = -1
+				elseif inputs[boxNumEx] ~= -1 then
+					inputs[boxNumEx] = 1
+				end
+			end
+
+			if intraboxYpos - thresholdy*thresholdPerc < 0 and boxNum - horizBoxes > 0 then
+				boxNumEx = boxNum - horizBoxes
+				if hurt == true and inputs[boxNumEx] ~= 1 then
+					inputs[boxNumEx] = -1
+				elseif inputs[boxNumEx] ~= -1 then
+					inputs[boxNumEx] = 1
+				end
+			elseif intraboxYpos + thresholdy*thresholdPerc > 16 and boxNum + horizBoxes < inputNum then
+				boxNumEx = boxNum + horizBoxes
+				if hurt == true and inputs[boxNumEx] ~= 1 then
+					inputs[boxNumEx] = -1
+				elseif inputs[boxNumEx] ~= -1 then
+					inputs[boxNumEx] = 1
+				end
+			end
+
+
+
+
+
+
 		end
 	end
 	return inputs
@@ -1498,9 +1525,9 @@ while true do
 		local y2 = y1+ weeBoxL
 
 		if forPic[i] == 1 then
-			gui.drawBox(x1,y1,x2,y2,0x00000000,0x80013175)
+			gui.drawBox(x1,y1,x2,y2,0x00000000,0xFF013175)
 		elseif forPic[i] == -1 then
-			gui.drawBox(x1,y1,x2,y2,0x00000000,0x80642629)
+			gui.drawBox(x1,y1,x2,y2,0x00000000,0xFF642629)
 		end
 	end
 
