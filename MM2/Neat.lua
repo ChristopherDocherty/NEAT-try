@@ -1,5 +1,5 @@
 --Constants
-population = 500
+population = 150
 genNum = 0
 stepSize = 1
 propForDeath = 0.5
@@ -10,7 +10,7 @@ eliteTOkeep = 7
 mChance = 0.25
 mWeight = 0.8
 mPerturb = 0.9
-mAddLink = 0.2
+mAddLink = 0.05
 mAddNode = 0.03
 
 --Recombination Constants
@@ -33,156 +33,38 @@ ButtonNames = {
 		"Right",
 }
 
-boxLength = 16
+memList = {}
+--Memory locaitons of all sprite location data
+memList[1] = 0x0460
+memList[2] = 0x04A0
+memList[3] = 0x04BB
+memList[4] = 0x0461
+memList[5] = 0x04A1
+memList[6] = 0x047D
+memList[7] = 0x04BD
+memList[8] = 0x047C
+memList[9] = 0x04BC
+memList[10] = 0x047B
 
-screen = {}
---MAY NEED OT CHANGE TO MATCH WITH GAME
-screen.L = 16
-screen.R = 239
-screen.T = 40
-screen.B = 196
-
-horizBoxes = math.ceil(math.abs(screen.R - screen.L )/ boxLength)
-vertBoxes = math.ceil(math.abs(screen.B - screen.T )/ boxLength)
-
-inputNum = horizBoxes * vertBoxes
+inputNum = #memList -- Will need to change if combining features
 outputNum = #ButtonNames
 
-thresholdPerc = 0.15
 
-
-
-
-function getSprites()
-
-	megaman = {}
-	megaman.thresholdx = 22
-	megaman.thresholdy = 28
-	megaman.position = {}
-	megaman.hurt = false
-	local megamanx = memory.readbyte(0x0460)
-	table.insert(megaman.position,megamanx)
-	local megamany = memory.readbyte(0x04A0)
-	table.insert(megaman.position,megamany)
-
-
-	metalman = {}
-	metalman.thresholdx = 22
-	metalman.thresholdy = 28
-	metalman.position = {}
-	metalman.hurt = true
-	local metalmanx = memory.readbyte(0x0461)
-	table.insert(metalman.position,metalmanx)
-	local metalmany = memory.readbyte(0x04A1)
-	table.insert(metalman.position,metalmany)
-
-	metalblades = {}
-	metalblades.thresholdx = 13
-	metalblades.thresholdy = 13
-	metalblades.position = {}
-	metalblades.hurt = true
-	local metalblade1x = memory.readbyte(0x047D)
-	table.insert(metalblades.position,metalblade1x)
-	local metalblade1y = memory.readbyte(0x04BD)
-	table.insert(metalblades.position,metalblade1y)
-	local metalblade2x = memory.readbyte(0x047C)
-	table.insert(metalblades.position,metalblade2x)
-	local metalblade2y = memory.readbyte(0x04BC)
-	table.insert(metalblades.position,metalblade2y)
-	local metalblade3x = memory.readbyte(0x047B)
-	table.insert(metalblades.position,metalblade3x)
-	local metalblade3y = memory.readbyte(0x04BB)
-	table.insert(metalblades.position,metalblade3y)
-
-end
-
-
-function getNearInputBoxes(sprite,inputs)
-
-	local thresholdx = sprite.thresholdx
-	local thresholdy = sprite.thresholdy
-	local hurt = sprite.hurt
-
-	for i = 1,(#sprite.position/2) do
-
-		local x = sprite.position[2*i-1]
-		local y = sprite.position[2*i]
-
-		if x > 10 and x < 234 then
-
-
-			local centreBox = {}
-			centreBox.metaX = math.floor(((x-screen.L)/boxLength))
-			centreBox.metaY = math.floor((y-screen.T)/boxLength)
-
-
-			local boxNum = horizBoxes*centreBox.metaY + centreBox.metaX
-			if hurt == true and inputs[boxNum] ~= 1 then
-				inputs[boxNum] = -1
-			elseif inputs[boxNum] ~= -1 then
-				inputs[boxNum] = 1
-			end
-
-			local intraboxXpos = (x-screen.L) - centreBox.metaX*boxLength
-			local intraboxYpos = (y-screen.T) - centreBox.metaY*boxLength
-
-			if intraboxXpos - thresholdx*thresholdPerc < 0 then
-				boxNumEx = boxNum - 1
-				if hurt == true and inputs[boxNumEx] ~= 1 then
-					inputs[boxNumEx] = -1
-				elseif inputs[boxNumEx] ~= -1 then
-					inputs[boxNumEx] = 1
-				end
-			elseif intraboxXpos + thresholdx*thresholdPerc > 16  then
-				boxNumEx = boxNum + 1
-				if hurt == true and inputs[boxNumEx] ~= 1 then
-					inputs[boxNumEx] = -1
-				elseif inputs[boxNumEx] ~= -1 then
-					inputs[boxNumEx] = 1
-				end
-			end
-
-			if intraboxYpos - thresholdy*thresholdPerc < 0 and boxNum - horizBoxes > 0 then
-				boxNumEx = boxNum - horizBoxes
-				if hurt == true and inputs[boxNumEx] ~= 1 then
-					inputs[boxNumEx] = -1
-				elseif inputs[boxNumEx] ~= -1 then
-					inputs[boxNumEx] = 1
-				end
-			elseif intraboxYpos + thresholdy*thresholdPerc > 16 and boxNum + horizBoxes < inputNum then
-				boxNumEx = boxNum + horizBoxes
-				if hurt == true and inputs[boxNumEx] ~= 1 then
-					inputs[boxNumEx] = -1
-				elseif inputs[boxNumEx] ~= -1 then
-					inputs[boxNumEx] = 1
-				end
-			end
-
-
-
-
-
-
-		end
-	end
-	return inputs
-end
 
 function getInputs()
 
 	local inputs = {}
-	for i = 1,inputNum do
-		inputs[i] = 0
-	end
+    for i = 1,#memList do
+		--Trying to nromalize over 1 so that weight mutations have a greater effect
+        inputs[i] = memory.readbyte(memList[i])/128 - 1
 
-	getSprites()
-
-	inputs = getNearInputBoxes(megaman,inputs)
-	inputs = getNearInputBoxes(metalman,inputs)
-	inputs = getNearInputBoxes(metalblades,inputs)
+    end
 
 	return inputs
 end
+
+
+
 
 
 --Data structures
@@ -439,7 +321,7 @@ function addLink(genome) --Need to determine if already existing
   --enabled by default
 
   linkGene.I, linkGene.O = randomNodes(genome)
-  linkGene.weight = math.random()*4 - 2 --following sethbling [-2,2] range here
+  linkGene.weight = math.random()
   linkGene.innovation = getInno(linkGene.I,linkGene.O)
 
   table.insert(genome.genes,linkGene)--check if this will stay global
@@ -498,7 +380,7 @@ function alterWeight(genome)
   	if rand <= mPerturb then
       gene[i].weight =gene[i].weight + gaussStep()
   	else
-    	gene[i].weight =  math.random()*4 -2
+    	gene[i].weight =  math.random()
   	end
 	end
 
@@ -1513,23 +1395,6 @@ while true do
 
 	gui.drawText(210,100,tostring(controller["P1 " .. ButtonNames[1]]) .. "\n" .. tostring(controller["P1 " .. ButtonNames[2]]) .. "\n" .. tostring(controller["P1 " .. ButtonNames[3]]) .. "\n" .. tostring(controller["P1 " .. ButtonNames[4]]))
 
-	weeBoxL = 5
-
-	gui.drawBox(140,10,140+(weeBoxL)*horizBoxes,10+(weeBoxL)*vertBoxes,0xFF000000,0x80808080)
-
-	forPic = getInputs()
-	for i = 1,inputNum do
-		local x1 = 140+(i%horizBoxes)*weeBoxL
-		local y1 = 10+(math.floor(i/horizBoxes))*weeBoxL
-		local x2 = x1 + weeBoxL
-		local y2 = y1+ weeBoxL
-
-		if forPic[i] == 1 then
-			gui.drawBox(x1,y1,x2,y2,0x00000000,0xFF013175)
-		elseif forPic[i] == -1 then
-			gui.drawBox(x1,y1,x2,y2,0x00000000,0xFF642629)
-		end
-	end
 
 	emu.frameadvance();
 end
