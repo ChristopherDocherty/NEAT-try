@@ -27,6 +27,8 @@ For more details on the NEAT algorithm the original paper can be found here:
 [Evolving Neural Networks through Augmenting Topologies](http://nn.cs.utexas.edu/downloads/papers/stanley.ec02.pdf)
 O. Stanley, R. Miikkulainen
 
+## Sources
+
 For further reading on Evolutionary Computing (which is helpful for
 understanding the terminology used in the paper) I recommend this book:
 
@@ -37,7 +39,7 @@ This coding project was heavily inspired by SethBling's [video](https://www.yout
 
 
 
-##Running the script
+## Running the script
 
 To run the script the [Bizhawk](http://tasvideos.org/BizHawk.html) emulator is
 required. Once download you need to load the ROM file of the game you want
