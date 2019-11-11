@@ -33,12 +33,12 @@ O. Stanley, R. Miikkulainen
 
 
 For further reading on Evolutionary Computing (which is helpful for
-understanding the terminology used in the paper) I recommend this book:\
+understanding the terminology used in the paper) I recommend this book:
 
 [Introduction to Evolutionary Computing Second Edition](http://cslt.riit.tsinghua.edu.cn/mediawiki/images/e/e8/Introduction_to_Evolutionary_Computing.pdf)\
 A.E. Eiben ,J.E. Smith
 
-This coding project was heavily inspired by SethBling's [video](https://www.youtube.com/watch?v=qv6UVOQ0F44)\
+This coding project was heavily inspired by SethBling's [video](https://www.youtube.com/watch?v=qv6UVOQ0F44)
 
 
 
@@ -48,7 +48,7 @@ To run the script the [Bizhawk](http://tasvideos.org/BizHawk.html) emulator is
 required. Once download you need to load the ROM file of the game you want
 to run the script on and then open Tools->Lua Console and open a Lua file
 from this repository. Running the file should output data about the generation
-and the last genomes performance.\
+and the last genomes performance.
 
 If you are training then I recommend you run the emulator on 400% speed (found
 in Config->Speed/Skip) so the algorithm can run as fast as possible.
