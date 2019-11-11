@@ -23,11 +23,14 @@ networks it will be able to reproduce and pass on to the next generation with
 the worst species being culled if they are far outperformed by the other
 species.
 
+
+
+## Sources
+
 For more details on the NEAT algorithm the original paper can be found here:
 [Evolving Neural Networks through Augmenting Topologies](http://nn.cs.utexas.edu/downloads/papers/stanley.ec02.pdf)
 O. Stanley, R. Miikkulainen
 
-## Sources
 
 For further reading on Evolutionary Computing (which is helpful for
 understanding the terminology used in the paper) I recommend this book:
